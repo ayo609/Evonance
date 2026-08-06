@@ -1,0 +1,1042 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
+  <title>Evonance – Investments</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0f172a;
+      --card: #1e293b;
+      --card-hover: #334155;
+      --primary: #10b981;
+      --primary-dark: #059669;
+      --primary-soft: rgba(16, 185, 129, 0.1);
+      --accent: #34d399;
+      --text: #f1f5f9;
+      --muted: #94a3b8;
+      --border: #334155;
+      --input-bg: #0f172a;
+      --success: #10b981;
+      --error: #ef4444;
+      --warning: #f59e0b;
+      --info: #3b82f6;
+      --purple: #8b5cf6;
+      --shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+      --glow: 0 0 40px rgba(16, 185, 129, 0.1);
+    }
+
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: var(--bg);
+      min-height: 100vh;
+      color: var(--text);
+      padding-bottom: 80px;
+      background-image: 
+        radial-gradient(ellipse at 0% 0%, rgba(16, 185, 129, 0.03) 0%, transparent 50%),
+        radial-gradient(ellipse at 100% 100%, rgba(52, 211, 153, 0.02) 0%, transparent 50%);
+    }
+
+    /* Toast Notification */
+    .toast {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      z-index: 1000;
+      transform: translateX(-120%);
+      transition: transform 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+      max-width: 400px;
+    }
+    .toast.show { transform: translateX(0); }
+    .toast.success { border-left: 4px solid var(--success); }
+    .toast.error { border-left: 4px solid var(--error); }
+    .toast.info { border-left: 4px solid var(--info); }
+    .toast-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .toast.success .toast-icon { background: rgba(16, 185, 129, 0.15); }
+    .toast.error .toast-icon { background: rgba(239, 68, 68, 0.15); }
+    .toast.info .toast-icon { background: rgba(59, 130, 246, 0.15); }
+    .toast-icon svg { width: 24px; height: 24px; }
+    .toast.success .toast-icon svg { color: var(--success); }
+    .toast.error .toast-icon svg { color: var(--error); }
+    .toast.info .toast-icon svg { color: var(--info); }
+    .toast-content h4 { font-size: 0.95rem; font-weight: 700; color: var(--text); margin-bottom: 2px; }
+    .toast-content p { font-size: 0.8rem; color: var(--muted); line-height: 1.3; }
+
+    /* Header */
+    .header {
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+      padding: 16px 20px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      backdrop-filter: blur(10px);
+    }
+    .header-content {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+    .header-left { display: flex; align-items: center; gap: 12px; }
+    .back-btn {
+      background: none;
+      border: none;
+      color: var(--muted);
+      cursor: pointer;
+      padding: 8px;
+      border-radius: 10px;
+      display: flex;
+      transition: all 0.2s;
+      text-decoration: none;
+    }
+    .back-btn:hover { background: var(--card-hover); color: var(--text); }
+    .back-btn svg { width: 24px; height: 24px; }
+    .header-title { font-size: 1.2rem; font-weight: 800; letter-spacing: -0.5px; }
+    .wallet-mini {
+      background: var(--input-bg);
+      border: 1px solid var(--border);
+      border-radius: 50px;
+      padding: 6px 14px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    /* Main Content */
+    .main-content {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    /* Tabs */
+    .tabs {
+      display: flex;
+      gap: 4px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 4px;
+      margin-bottom: 20px;
+    }
+    .tab-btn {
+      flex: 1;
+      padding: 12px 16px;
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      font-family: inherit;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      border-radius: 12px;
+      transition: all 0.3s;
+      text-align: center;
+    }
+    .tab-btn.active {
+      background: var(--primary);
+      color: white;
+      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+    }
+    .tab-btn:hover:not(.active) {
+      background: var(--card-hover);
+      color: var(--text);
+    }
+
+    /* Tab Content */
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    /* Plans Grid */
+    .plans-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 16px;
+    }
+    .plan-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 24px;
+      position: relative;
+      transition: all 0.3s;
+      display: flex;
+      flex-direction: column;
+    }
+    .plan-card:hover {
+      border-color: var(--primary);
+      box-shadow: var(--glow);
+      transform: translateY(-2px);
+    }
+    .plan-card.featured {
+      border-color: var(--warning);
+      box-shadow: 0 0 30px rgba(245, 158, 11, 0.1);
+    }
+    .plan-badge {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      background: linear-gradient(135deg, var(--warning), #fbbf24);
+      color: #000;
+      font-size: 0.65rem;
+      font-weight: 800;
+      padding: 4px 10px;
+      border-radius: 50px;
+      text-transform: uppercase;
+    }
+    .plan-badge.limited {
+      background: linear-gradient(135deg, var(--error), #f87171);
+      color: white;
+    }
+    .plan-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      margin-bottom: 12px;
+    }
+    .plan-icon.bronze { background: rgba(205, 127, 50, 0.2); }
+    .plan-icon.silver { background: rgba(192, 192, 192, 0.2); }
+    .plan-icon.gold { background: rgba(255, 215, 0, 0.2); }
+    .plan-icon.platinum { background: rgba(16, 185, 129, 0.2); }
+    .plan-icon.diamond { background: rgba(59, 130, 246, 0.2); }
+    .plan-icon.vip { background: rgba(139, 92, 246, 0.2); }
+    .plan-icon.elite { background: rgba(245, 158, 11, 0.2); }
+    .plan-icon.legend { background: rgba(239, 68, 68, 0.2); }
+    .plan-icon.ultimate { background: rgba(236, 72, 153, 0.2); }
+    .plan-name { font-size: 1rem; font-weight: 700; margin-bottom: 16px; }
+    .plan-details { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; flex: 1; }
+    .plan-detail {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.8rem;
+      color: var(--muted);
+      padding: 6px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .plan-detail:last-child { border-bottom: none; }
+    .plan-detail span:last-child { font-weight: 600; color: var(--text); }
+    .profit-highlight { color: var(--success) !important; }
+    .invest-btn {
+      width: 100%;
+      padding: 12px;
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      color: white;
+      border: none;
+      border-radius: 50px;
+      font-family: inherit;
+      font-size: 0.9rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    .invest-btn:hover {
+      box-shadow: 0 8px 24px rgba(16, 185, 129, 0.4);
+      transform: translateY(-1px);
+    }
+    .invest-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    /* My Investments */
+    .investment-list { display: flex; flex-direction: column; gap: 12px; }
+    .investment-item {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .investment-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .investment-plan-name { font-weight: 700; font-size: 0.95rem; }
+    .investment-status {
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 50px;
+      text-transform: uppercase;
+    }
+    .investment-status.active { background: rgba(16, 185, 129, 0.15); color: var(--success); }
+    .investment-status.completed { background: rgba(59, 130, 246, 0.15); color: var(--info); }
+    .investment-status.pending { background: rgba(245, 158, 11, 0.15); color: var(--warning); }
+    .progress-bar {
+      height: 8px;
+      background: var(--border);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--primary), var(--accent));
+      border-radius: 4px;
+      transition: width 0.5s;
+    }
+    .investment-stats {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.78rem;
+      color: var(--muted);
+    }
+    .investment-stats span:last-child { color: var(--text); font-weight: 600; }
+    .days-remaining { color: var(--warning) !important; }
+
+    /* Confirm Modal */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(4px);
+      z-index: 200;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .modal-overlay.show { display: flex; }
+    .modal {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 28px;
+      max-width: 420px;
+      width: 100%;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+      animation: modalIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    @keyframes modalIn {
+      from { opacity: 0; transform: scale(0.9) translateY(20px); }
+      to { opacity: 1; transform: scale(1) translateY(0); }
+    }
+    .modal h3 { font-size: 1.1rem; font-weight: 700; margin-bottom: 16px; text-align: center; }
+    .modal-details {
+      background: var(--input-bg);
+      border-radius: 14px;
+      padding: 16px;
+      margin-bottom: 20px;
+    }
+    .modal-detail {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+      font-size: 0.85rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .modal-detail:last-child { border-bottom: none; }
+    .modal-detail span:first-child { color: var(--muted); }
+    .modal-detail span:last-child { font-weight: 600; }
+    .modal-buttons { display: flex; gap: 10px; }
+    .modal-btn {
+      flex: 1;
+      padding: 12px;
+      border-radius: 50px;
+      font-family: inherit;
+      font-size: 0.9rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: none;
+    }
+    .modal-btn.cancel { background: var(--input-bg); color: var(--text); border: 1px solid var(--border); }
+    .modal-btn.cancel:hover { background: var(--card-hover); }
+    .modal-btn.confirm { background: var(--primary); color: white; }
+    .modal-btn.confirm:hover { background: var(--primary-dark); }
+    .spinner-mini {
+      width: 18px;
+      height: 18px;
+      border: 2.5px solid rgba(255,255,255,0.3);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+      display: none;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Empty State */
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--muted);
+    }
+    .empty-state svg { width: 64px; height: 64px; margin-bottom: 16px; opacity: 0.4; }
+    .empty-state h3 { font-size: 1.1rem; color: var(--text); margin-bottom: 8px; }
+    .empty-state p { font-size: 0.85rem; }
+
+    /* Bottom Navigation */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: var(--card);
+      border-top: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      padding: 8px 0 12px;
+      z-index: 100;
+      backdrop-filter: blur(10px);
+    }
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      text-decoration: none;
+      color: var(--muted);
+      font-size: 0.68rem;
+      font-weight: 600;
+      transition: all 0.2s;
+      padding: 4px 12px;
+      border-radius: 12px;
+    }
+    .nav-item.active { color: var(--primary); }
+    .nav-item svg { width: 24px; height: 24px; }
+    .nav-item:hover { color: var(--text); }
+
+    @media (max-width: 600px) {
+      .plans-grid { grid-template-columns: 1fr; }
+      .main-content { padding: 16px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Toast -->
+<div class="toast success" id="toast">
+  <div class="toast-icon">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+  </div>
+  <div class="toast-content">
+    <h4 id="toastTitle">Success</h4>
+    <p id="toastMessage">Action completed.</p>
+  </div>
+</div>
+
+<!-- Header -->
+<header class="header">
+  <div class="header-content">
+    <div class="header-left">
+      <a href="dashboard.html" class="back-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+      </a>
+      <span class="header-title">Investments</span>
+    </div>
+    <div class="wallet-mini" id="headerBalance">₦0.00</div>
+  </div>
+</header>
+
+<!-- Main Content -->
+<main class="main-content">
+  
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('plans')">📊 Available Plans</button>
+    <button class="tab-btn" onclick="switchTab('limited')">⚡ Limited Offers</button>
+    <button class="tab-btn" onclick="switchTab('myInvestments')">📋 My Investments</button>
+  </div>
+
+  <!-- Available Plans -->
+  <div class="tab-content active" id="tab-plans">
+    <div class="plans-grid" id="plansGrid"></div>
+  </div>
+
+  <!-- Limited Offers -->
+  <div class="tab-content" id="tab-limited">
+    <div class="plans-grid" id="limitedPlansGrid">
+      <div class="empty-state">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        <h3>No Limited Offers</h3>
+        <p>Check back later for special limited-time investment opportunities.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- My Investments -->
+  <div class="tab-content" id="tab-myInvestments">
+    <div class="investment-list" id="myInvestmentsList">
+      <div class="empty-state">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M22 7l-10 7L2 7"/></svg>
+        <h3>No Investments Yet</h3>
+        <p>Start investing today to grow your wealth with Evonance.</p>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<!-- Confirm Investment Modal -->
+<div class="modal-overlay" id="confirmModal">
+  <div class="modal">
+    <h3>Confirm Investment</h3>
+    <div class="modal-details" id="modalDetails"></div>
+    <div class="modal-buttons">
+      <button class="modal-btn cancel" onclick="closeConfirmModal()">Cancel</button>
+      <button class="modal-btn confirm" id="confirmBtn" onclick="confirmInvestment()">
+        <div class="spinner-mini" id="confirmSpinner"></div>
+        <span id="confirmText">Confirm Purchase</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Bottom Navigation -->
+<nav class="bottom-nav">
+  <a href="dashboard.html" class="nav-item">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
+    Home
+  </a>
+  <a href="deposit.html" class="nav-item">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+    Deposit
+  </a>
+  <a href="withdraw.html" class="nav-item">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="12" y1="10" x2="12" y2="18"/><polyline points="9 15 12 18 15 15"/></svg>
+    Withdraw
+  </a>
+  <a href="investments.html" class="nav-item active">
+    <svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+    Invest
+  </a>
+  <a href="profile.html" class="nav-item">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+    Profile
+  </a>
+</nav>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+  import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, query, where, orderBy, getDocs, serverTimestamp, increment, addDoc, arrayUnion } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyDT0ACobk5YMFgrqxb-VOnfELXTyssrOtA",
+    authDomain: "newpro-d830e.firebaseapp.com",
+    projectId: "newpro-d830e",
+    storageBucket: "newpro-d830e.firebasestorage.app",
+    messagingSenderId: "642315724384",
+    appId: "1:642315724384:web:19def936898718e9300505"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+
+  let currentUser = null;
+  let selectedPlan = null;
+
+  // Investment Plans
+  const INVESTMENT_PLANS = [
+    { id: 1, name: 'Starter Plan', icon: 'bronze', emoji: '🥉', invest: 7000, profit: 2800, days: 2, total: 9800, dailyROI: 1400 },
+    { id: 2, name: 'Basic Plan', icon: 'silver', emoji: '🥈', invest: 15000, profit: 7000, days: 6, total: 22000, dailyROI: 1166.67 },
+    { id: 3, name: 'Standard Plan', icon: 'gold', emoji: '🥇', invest: 25000, profit: 11000, days: 10, total: 36000, dailyROI: 1100 },
+    { id: 4, name: 'Premium Plan', icon: 'platinum', emoji: '💎', invest: 45000, profit: 25000, days: 20, total: 70000, dailyROI: 1250 },
+    { id: 5, name: 'Business Plan', icon: 'diamond', emoji: '💼', invest: 70000, profit: 70000, days: 30, total: 140000, dailyROI: 2333.33 },
+    { id: 6, name: 'Executive Plan', icon: 'vip', emoji: '👑', invest: 100000, profit: 120000, days: 40, total: 220000, dailyROI: 3000 },
+    { id: 7, name: 'Elite Plan', icon: 'elite', emoji: '🚀', invest: 150000, profit: 300000, days: 50, total: 450000, dailyROI: 6000 },
+    { id: 8, name: 'Legend Plan', icon: 'legend', emoji: '🏆', invest: 200000, profit: 500000, days: 60, total: 700000, dailyROI: 8333.33 },
+    { id: 9, name: 'Ultimate Plan', icon: 'ultimate', emoji: '🌟', invest: 300000, profit: 1200000, days: 90, total: 1500000, dailyROI: 13333.33 }
+  ];
+
+  const MIN_DEPOSIT = 7000;
+
+  function showToast(type, title, message, duration = 4000) {
+    const toast = document.getElementById('toast');
+    toast.className = 'toast ' + type;
+    document.getElementById('toastTitle').textContent = title;
+    document.getElementById('toastMessage').textContent = message;
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), duration);
+  }
+
+  function formatNaira(amount) {
+    return '₦' + Number(amount).toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  function formatDate(timestamp) {
+    if (!timestamp) return '';
+    const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+    return date.toLocaleDateString('en-NG', { year: 'numeric', month: 'short', day: 'numeric' });
+  }
+
+  // Switch tabs
+  window.switchTab = function(tab) {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    
+    if (tab === 'plans') {
+      document.querySelector('.tab-btn:nth-child(1)').classList.add('active');
+      document.getElementById('tab-plans').classList.add('active');
+    } else if (tab === 'limited') {
+      document.querySelector('.tab-btn:nth-child(2)').classList.add('active');
+      document.getElementById('tab-limited').classList.add('active');
+      loadLimitedPlans();
+    } else if (tab === 'myInvestments') {
+      document.querySelector('.tab-btn:nth-child(3)').classList.add('active');
+      document.getElementById('tab-myInvestments').classList.add('active');
+      loadMyInvestments();
+    }
+  };
+
+  // Render available plans
+  function renderPlans() {
+    const grid = document.getElementById('plansGrid');
+    grid.innerHTML = INVESTMENT_PLANS.map(plan => `
+      <div class="plan-card ${plan.id === 5 ? 'featured' : ''}">
+        ${plan.id === 5 ? '<div class="plan-badge">🔥 Popular</div>' : ''}
+        <div class="plan-icon ${plan.icon}">${plan.emoji}</div>
+        <div class="plan-name">${plan.name}</div>
+        <div class="plan-details">
+          <div class="plan-detail">
+            <span>Investment</span>
+            <span>${formatNaira(plan.invest)}</span>
+          </div>
+          <div class="plan-detail">
+            <span>Profit</span>
+            <span class="profit-highlight">+${formatNaira(plan.profit)}</span>
+          </div>
+          <div class="plan-detail">
+            <span>Duration</span>
+            <span>${plan.days} Days</span>
+          </div>
+          <div class="plan-detail">
+            <span>Daily ROI</span>
+            <span class="profit-highlight">~${formatNaira(plan.dailyROI)}/day</span>
+          </div>
+          <div class="plan-detail">
+            <span>Total Return</span>
+            <span style="font-size: 1rem; color: var(--success);">${formatNaira(plan.total)}</span>
+          </div>
+        </div>
+        <button class="invest-btn" onclick="openConfirmModal(${plan.id}, 'standard')">
+          Invest ${formatNaira(plan.invest)}
+        </button>
+      </div>
+    `).join('');
+  }
+
+  // Load limited plans from Firebase
+  async function loadLimitedPlans() {
+    const grid = document.getElementById('limitedPlansGrid');
+    try {
+      const limitedQuery = query(collection(db, 'limitedPlans'), where('active', '==', true));
+      const snapshot = await getDocs(limitedQuery);
+      
+      if (snapshot.empty) {
+        grid.innerHTML = `
+          <div class="empty-state" style="grid-column: 1/-1;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            <h3>No Limited Offers</h3>
+            <p>Check back later for special limited-time investment opportunities.</p>
+          </div>`;
+        return;
+      }
+      
+      grid.innerHTML = '';
+      snapshot.forEach(doc => {
+        const plan = doc.data();
+        grid.innerHTML += `
+          <div class="plan-card featured">
+            <div class="plan-badge limited">⚡ Limited</div>
+            <div class="plan-icon ${plan.icon || 'diamond'}">${plan.emoji || '🔥'}</div>
+            <div class="plan-name">${plan.name}</div>
+            <div class="plan-details">
+              <div class="plan-detail"><span>Investment</span><span>${formatNaira(plan.invest)}</span></div>
+              <div class="plan-detail"><span>Profit</span><span class="profit-highlight">+${formatNaira(plan.profit)}</span></div>
+              <div class="plan-detail"><span>Duration</span><span>${plan.days} Days</span></div>
+              <div class="plan-detail"><span>Total Return</span><span style="color: var(--success);">${formatNaira(plan.total)}</span></div>
+            </div>
+            <button class="invest-btn" onclick="openConfirmModal('${doc.id}', 'limited')">
+              Invest ${formatNaira(plan.invest)}
+            </button>
+          </div>`;
+      });
+    } catch (error) {
+      console.error('Error loading limited plans:', error);
+    }
+  }
+
+  // Load my investments
+  async function loadMyInvestments() {
+    if (!currentUser) return;
+    const list = document.getElementById('myInvestmentsList');
+    
+    try {
+      const invQuery = query(
+        collection(db, 'investments'),
+        where('uid', '==', currentUser.uid),
+        orderBy('createdAt', 'desc')
+      );
+      
+      const snapshot = await getDocs(invQuery);
+      
+      if (snapshot.empty) {
+        list.innerHTML = `
+          <div class="empty-state">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M22 7l-10 7L2 7"/></svg>
+            <h3>No Investments Yet</h3>
+            <p>Start investing today to grow your wealth with Evonance.</p>
+          </div>`;
+        return;
+      }
+      
+      list.innerHTML = '';
+      snapshot.forEach(doc => {
+        const inv = doc.data();
+        const totalDays = inv.totalDays || 0;
+        const daysElapsed = inv.daysElapsed || 0;
+        const progress = totalDays > 0 ? Math.min((daysElapsed / totalDays) * 100, 100) : 0;
+        const daysRemaining = Math.max(totalDays - daysElapsed, 0);
+        const isCompleted = inv.status === 'completed';
+        
+        list.innerHTML += `
+          <div class="investment-item">
+            <div class="investment-header">
+              <span class="investment-plan-name">${inv.planName || 'Investment'}</span>
+              <span class="investment-status ${inv.status}">${inv.status}</span>
+            </div>
+            <div class="progress-bar">
+              <div class="progress-fill" style="width: ${progress}%"></div>
+            </div>
+            <div class="investment-stats">
+              <span>Invested: <span>${formatNaira(inv.amount)}</span></span>
+              <span>Profit: <span style="color: var(--success);">${formatNaira(inv.totalProfit || 0)}</span></span>
+              <span>Total: <span>${formatNaira(inv.totalReturn || 0)}</span></span>
+            </div>
+            <div class="investment-stats">
+              <span>Started: ${formatDate(inv.createdAt)}</span>
+              <span>Duration: ${totalDays} days</span>
+              <span class="${isCompleted ? '' : 'days-remaining'}">${isCompleted ? 'Completed ✅' : daysRemaining + ' days left'}</span>
+            </div>
+            <div class="investment-stats">
+              <span>Daily ROI: ${formatNaira(inv.dailyROI || 0)}</span>
+              <span>ROI Earned: <span style="color: var(--success);">${formatNaira(inv.roiEarned || 0)}</span></span>
+            </div>
+          </div>`;
+      });
+    } catch (error) {
+      console.error('Error loading investments:', error);
+    }
+  }
+
+  // Open confirm modal
+  window.openConfirmModal = function(planId, type) {
+    let plan;
+    if (type === 'limited') {
+      // Will be set from the limited plans data
+      selectedPlan = { id: planId, type: 'limited' };
+    } else {
+      plan = INVESTMENT_PLANS.find(p => p.id === planId);
+      selectedPlan = { ...plan, type: 'standard' };
+    }
+    
+    // For limited plans, we need to fetch the data
+    if (type === 'limited') {
+      getDoc(doc(db, 'limitedPlans', planId)).then(snap => {
+        if (snap.exists()) {
+          const data = snap.data();
+          selectedPlan = { ...data, id: planId, type: 'limited' };
+          showModalWithPlan();
+        }
+      });
+    } else {
+      showModalWithPlan();
+    }
+  };
+
+  function showModalWithPlan() {
+    if (!selectedPlan) return;
+    const details = document.getElementById('modalDetails');
+    details.innerHTML = `
+      <div class="modal-detail"><span>Plan</span><span>${selectedPlan.name}</span></div>
+      <div class="modal-detail"><span>Investment</span><span>${formatNaira(selectedPlan.invest)}</span></div>
+      <div class="modal-detail"><span>Expected Profit</span><span style="color: var(--success);">${formatNaira(selectedPlan.profit)}</span></div>
+      <div class="modal-detail"><span>Duration</span><span>${selectedPlan.days} Days</span></div>
+      <div class="modal-detail"><span>Total Return</span><span style="color: var(--success); font-size: 1rem;">${formatNaira(selectedPlan.total)}</span></div>
+    `;
+    document.getElementById('confirmModal').classList.add('show');
+  }
+
+  window.closeConfirmModal = function() {
+    document.getElementById('confirmModal').classList.remove('show');
+    selectedPlan = null;
+  };
+
+  // Confirm and process investment
+  window.confirmInvestment = async function() {
+    if (!currentUser || !selectedPlan) return;
+    
+    const confirmBtn = document.getElementById('confirmBtn');
+    const spinner = document.getElementById('confirmSpinner');
+    const text = document.getElementById('confirmText');
+    
+    confirmBtn.disabled = true;
+    spinner.style.display = 'block';
+    text.textContent = 'Processing...';
+    
+    try {
+      const userRef = doc(db, 'users', currentUser.uid);
+      const userSnap = await getDoc(userRef);
+      
+      if (!userSnap.exists()) {
+        throw new Error('User not found');
+      }
+      
+      const userData = userSnap.data();
+      const depositBalance = userData.depositWallet || 0;
+      
+      // Check sufficient balance
+      if (depositBalance < selectedPlan.invest) {
+        showToast('error', 'Insufficient Balance', 
+          `You need ${formatNaira(selectedPlan.invest)} in your Deposit Wallet. Current balance: ${formatNaira(depositBalance)}`);
+        closeConfirmModal();
+        confirmBtn.disabled = false;
+        spinner.style.display = 'none';
+        text.textContent = 'Confirm Purchase';
+        return;
+      }
+      
+      // Deduct from deposit wallet
+      await updateDoc(userRef, {
+        depositWallet: increment(-selectedPlan.invest)
+      });
+      
+      // Create investment document
+      const investmentRef = doc(collection(db, 'investments'));
+      const investmentData = {
+        uid: currentUser.uid,
+        planId: selectedPlan.id,
+        planName: selectedPlan.name,
+        planType: selectedPlan.type,
+        amount: selectedPlan.invest,
+        totalProfit: selectedPlan.profit,
+        totalReturn: selectedPlan.total,
+        totalDays: selectedPlan.days,
+        dailyROI: selectedPlan.dailyROI || (selectedPlan.profit / selectedPlan.days),
+        daysElapsed: 0,
+        roiEarned: 0,
+        status: 'active',
+        createdAt: serverTimestamp(),
+        lastROICredit: serverTimestamp(),
+        completedAt: null
+      };
+      
+      await setDoc(investmentRef, investmentData);
+      
+      // Update user's active investments count
+      await updateDoc(userRef, {
+        activeInvestments: increment(1)
+      });
+      
+      // Create transaction record
+      await addDoc(collection(db, 'transactions'), {
+        uid: currentUser.uid,
+        type: 'investment',
+        amount: selectedPlan.invest,
+        planName: selectedPlan.name,
+        status: 'completed',
+        createdAt: serverTimestamp(),
+        description: `Investment in ${selectedPlan.name}`
+      });
+      
+      // Process referral commissions
+      await processReferralCommissions(currentUser.uid, selectedPlan.invest, selectedPlan.name);
+      
+      closeConfirmModal();
+      showToast('success', 'Investment Successful! 🎉', 
+        `You've invested ${formatNaira(selectedPlan.invest)} in ${selectedPlan.name}. Your ROI will be credited daily to your Withdrawal Wallet.`);
+      
+      // Refresh display
+      updateHeaderBalance();
+      loadMyInvestments();
+      
+    } catch (error) {
+      console.error('Investment error:', error);
+      showToast('error', 'Investment Failed', error.message || 'Something went wrong. Please try again.');
+    } finally {
+      confirmBtn.disabled = false;
+      spinner.style.display = 'none';
+      text.textContent = 'Confirm Purchase';
+    }
+  };
+
+  // Process referral commissions (Level 1: 10%, Level 2: 2%, Level 3: 1%)
+  async function processReferralCommissions(uid, investmentAmount, planName) {
+    try {
+      const userSnap = await getDoc(doc(db, 'users', uid));
+      if (!userSnap.exists()) return;
+      
+      const userData = userSnap.data();
+      const referredBy = userData.referredBy;
+      
+      if (!referredBy) return; // No upliner
+      
+      // Level 1: Direct referrer gets 10%
+      const level1Ref = doc(db, 'users', referredBy);
+      const level1Snap = await getDoc(level1Ref);
+      
+      if (level1Snap.exists()) {
+        const level1Commission = investmentAmount * 0.10;
+        
+        await updateDoc(level1Ref, {
+          withdrawalWallet: increment(level1Commission),
+          referralEarnings: increment(level1Commission),
+          totalEarnings: increment(level1Commission)
+        });
+        
+        // Notify level 1
+        await addDoc(collection(db, 'notifications'), {
+          uid: referredBy,
+          title: '💰 Referral Commission!',
+          message: `Your downline just invested ${formatNaira(investmentAmount)} in ${planName}. You earned ${formatNaira(level1Commission)} (Level 1 - 10%) added to your Withdrawal Wallet.`,
+          type: 'referral_commission',
+          amount: level1Commission,
+          level: 1,
+          read: false,
+          createdAt: serverTimestamp()
+        });
+        
+        // Create transaction for level 1
+        await addDoc(collection(db, 'transactions'), {
+          uid: referredBy,
+          type: 'referral_earning',
+          amount: level1Commission,
+          status: 'completed',
+          description: `Level 1 commission (10%) from downline investment in ${planName}`,
+          createdAt: serverTimestamp()
+        });
+        
+        // Level 2: Check if level 1 has a referrer
+        const level2Uid = level1Snap.data().referredBy;
+        if (level2Uid) {
+          const level2Ref = doc(db, 'users', level2Uid);
+          const level2Snap = await getDoc(level2Ref);
+          
+          if (level2Snap.exists()) {
+            const level2Commission = investmentAmount * 0.02;
+            
+            await updateDoc(level2Ref, {
+              withdrawalWallet: increment(level2Commission),
+              referralEarnings: increment(level2Commission),
+              totalEarnings: increment(level2Commission)
+            });
+            
+            await addDoc(collection(db, 'notifications'), {
+              uid: level2Uid,
+              title: '💰 Referral Commission!',
+              message: `Your Level 2 downline invested ${formatNaira(investmentAmount)} in ${planName}. You earned ${formatNaira(level2Commission)} (Level 2 - 2%) added to your Withdrawal Wallet.`,
+              type: 'referral_commission',
+              amount: level2Commission,
+              level: 2,
+              read: false,
+              createdAt: serverTimestamp()
+            });
+            
+            await addDoc(collection(db, 'transactions'), {
+              uid: level2Uid,
+              type: 'referral_earning',
+              amount: level2Commission,
+              status: 'completed',
+              description: `Level 2 commission (2%) from downline investment in ${planName}`,
+              createdAt: serverTimestamp()
+            });
+            
+            // Level 3
+            const level3Uid = level2Snap.data().referredBy;
+            if (level3Uid) {
+              const level3Ref = doc(db, 'users', level3Uid);
+              const level3Snap = await getDoc(level3Ref);
+              
+              if (level3Snap.exists()) {
+                const level3Commission = investmentAmount * 0.01;
+                
+                await updateDoc(level3Ref, {
+                  withdrawalWallet: increment(level3Commission),
+                  referralEarnings: increment(level3Commission),
+                  totalEarnings: increment(level3Commission)
+                });
+                
+                await addDoc(collection(db, 'notifications'), {
+                  uid: level3Uid,
+                  title: '💰 Referral Commission!',
+                  message: `Your Level 3 downline invested ${formatNaira(investmentAmount)} in ${planName}. You earned ${formatNaira(level3Commission)} (Level 3 - 1%) added to your Withdrawal Wallet.`,
+                  type: 'referral_commission',
+                  amount: level3Commission,
+                  level: 3,
+                  read: false,
+                  createdAt: serverTimestamp()
+                });
+                
+                await addDoc(collection(db, 'transactions'), {
+                  uid: level3Uid,
+                  type: 'referral_earning',
+                  amount: level3Commission,
+                  status: 'completed',
+                  description: `Level 3 commission (1%) from downline investment in ${planName}`,
+                  createdAt: serverTimestamp()
+                });
+              }
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error processing referral commissions:', error);
+    }
+  }
+
+  // Update header balance
+  async function updateHeaderBalance() {
+    if (!currentUser) return;
+    try {
+      const snap = await getDoc(doc(db, 'users', currentUser.uid));
+      if (snap.exists()) {
+        document.getElementById('headerBalance').textContent = formatNaira(snap.data().depositWallet || 0);
+      }
+    } catch (e) {}
+  }
+
+  // Initialize
+  onAuthStateChanged(auth, (user) => {
+    if (user) {
+      currentUser = user;
+      renderPlans();
+      updateHeaderBalance();
+    } else {
+      window.location.href = 'login.html';
+    }
+  });
+</script>
+
+</body>
+</html>
