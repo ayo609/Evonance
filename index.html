@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
+  <title>Evonance – Register</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0a0f1a;
+      --card: rgba(17, 25, 40, 0.85);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --primary: #10b981;
+      --primary-dark: #059669;
+      --primary-soft: rgba(16, 185, 129, 0.12);
+      --accent: #34d399;
+      --text: #f1f5f9;
+      --muted: #94a3b8;
+      --border: rgba(255, 255, 255, 0.08);
+      --input-bg: rgba(15, 23, 42, 0.8);
+      --success: #10b981;
+      --error: #ef4444;
+      --warning: #f59e0b;
+      --glow-green: 0 0 60px rgba(16, 185, 129, 0.15);
+      --glow-card: 0 8px 32px rgba(0, 0, 0, 0.4);
+    }
+
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: var(--bg);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text);
+      padding: 20px;
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    /* ============ FLOATING PARTICLES ============ */
+    .particles-container {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      overflow: hidden;
+    }
+    .particle {
+      position: absolute;
+      border-radius: 50%;
+      animation: floatUp linear infinite;
+      opacity: 0;
+    }
+    @keyframes floatUp {
+      0% { transform: translateY(100vh) scale(0); opacity: 0; }
+      10% { opacity: 1; }
+      90% { opacity: 1; }
+      100% { transform: translateY(-10vh) scale(1); opacity: 0; }
+    }
+    .particle-dot {
+      width: 4px;
+      height: 4px;
+      background: var(--accent);
+      box-shadow: 0 0 8px var(--accent), 0 0 16px var(--accent);
+    }
+    .particle-dot.small { width: 2px; height: 2px; }
+    .particle-dot.large { width: 6px; height: 6px; }
+    .particle-dot.gold { background: #f59e0b; box-shadow: 0 0 8px #f59e0b, 0 0 16px #f59e0b; }
+    .particle-dot.blue { background: #3b82f6; box-shadow: 0 0 8px #3b82f6, 0 0 16px #3b82f6; }
+    .particle-dot.purple { background: #8b5cf6; box-shadow: 0 0 8px #8b5cf6, 0 0 16px #8b5cf6; }
+
+    /* Background orbs */
+    .bg-orb {
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(80px);
+      opacity: 0.08;
+      pointer-events: none;
+      z-index: 0;
+    }
+    .bg-orb.green {
+      width: 500px; height: 500px;
+      background: var(--primary);
+      top: -200px; left: -150px;
+      animation: orbMove1 15s ease-in-out infinite;
+    }
+    .bg-orb.blue {
+      width: 400px; height: 400px;
+      background: #3b82f6;
+      bottom: -150px; right: -100px;
+      animation: orbMove2 18s ease-in-out infinite;
+    }
+    .bg-orb.purple {
+      width: 300px; height: 300px;
+      background: #8b5cf6;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      animation: orbMove3 20s ease-in-out infinite;
+    }
+    @keyframes orbMove1 {
+      0%, 100% { transform: translate(0, 0) scale(1); }
+      33% { transform: translate(80px, 60px) scale(1.1); }
+      66% { transform: translate(-40px, -30px) scale(0.9); }
+    }
+    @keyframes orbMove2 {
+      0%, 100% { transform: translate(0, 0) scale(1); }
+      33% { transform: translate(-60px, -40px) scale(1.15); }
+      66% { transform: translate(50px, 30px) scale(0.85); }
+    }
+    @keyframes orbMove3 {
+      0%, 100% { transform: translate(-50%, -50%) scale(1); }
+      33% { transform: translate(-30%, -70%) scale(1.2); }
+      66% { transform: translate(-70%, -30%) scale(0.8); }
+    }
+
+    /* Grid lines */
+    .grid-overlay {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      background-image: 
+        linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px);
+      background-size: 60px 60px;
+      opacity: 0.5;
+    }
+
+    /* Success Toast */
+    .success-toast {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      background: rgba(6, 95, 70, 0.95);
+      backdrop-filter: blur(20px);
+      border: 1px solid var(--success);
+      border-radius: 16px;
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      z-index: 1000;
+      transform: translateX(-120%);
+      transition: transform 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+      box-shadow: 0 20px 40px rgba(16, 185, 129, 0.2);
+      max-width: 380px;
+    }
+    .success-toast.show { transform: translateX(0); }
+    .success-toast-icon {
+      width: 40px; height: 40px;
+      background: var(--success);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .success-toast-icon svg { width: 24px; height: 24px; color: white; }
+    .success-toast-content h4 { font-size: 0.95rem; font-weight: 700; color: #fff; margin-bottom: 2px; }
+    .success-toast-content p { font-size: 0.8rem; color: #6ee7b7; line-height: 1.3; }
+
+    /* Main Container */
+    .container {
+      width: 100%;
+      max-width: 480px;
+      display: flex;
+      flex-direction: column;
+      gap: 28px;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* Logo */
+    .logo-section { text-align: center; }
+    .logo {
+      display: inline-flex; align-items: center; gap: 12px;
+      text-decoration: none; margin-bottom: 8px;
+    }
+    .logo-icon {
+      width: 52px; height: 52px;
+      background: linear-gradient(135deg, var(--primary) 0%, #059669 50%, var(--accent) 100%);
+      border-radius: 16px;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 8px 32px rgba(16, 185, 129, 0.35), 0 0 60px rgba(16, 185, 129, 0.1);
+      position: relative; overflow: hidden;
+    }
+    .logo-icon::after {
+      content: '';
+      position: absolute;
+      top: -50%; left: -50%;
+      width: 200%; height: 200%;
+      background: linear-gradient(45deg, transparent, rgba(255,255,255,0.12), transparent);
+      transform: rotate(45deg);
+      animation: logoShine 3s ease-in-out infinite;
+    }
+    @keyframes logoShine {
+      0%, 100% { left: -50%; }
+      50% { left: 100%; }
+    }
+    .logo-icon svg { width: 26px; height: 26px; position: relative; z-index: 1; }
+    .logo-name {
+      font-size: 1.9rem; font-weight: 900; color: var(--text); letter-spacing: -1px;
+    }
+    .logo-name span { 
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .logo-subtitle {
+      font-size: 0.82rem; color: var(--muted); font-weight: 400; letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+
+    /* Registration Card - Glass Morphism */
+    .register-card {
+      background: var(--card);
+      backdrop-filter: blur(30px);
+      -webkit-backdrop-filter: blur(30px);
+      border: 1px solid var(--card-border);
+      border-radius: 24px;
+      padding: 32px;
+      box-shadow: var(--glow-card);
+      position: relative; overflow: hidden;
+    }
+    .register-card::before {
+      content: '';
+      position: absolute; top: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--primary), var(--accent), transparent);
+    }
+    .register-card::after {
+      content: '';
+      position: absolute; top: -100px; right: -100px;
+      width: 200px; height: 200px;
+      background: radial-gradient(circle, rgba(16,185,129,0.06) 0%, transparent 70%);
+      border-radius: 50%;
+      pointer-events: none;
+    }
+    .register-card h2 {
+      font-size: 1.5rem; font-weight: 800; margin-bottom: 4px; letter-spacing: -0.5px;
+    }
+    .register-card .subtitle { color: var(--muted); font-size: 0.88rem; margin-bottom: 24px; }
+
+    /* Info Banner */
+    .info-banner {
+      background: rgba(16, 185, 129, 0.06);
+      border: 1px solid rgba(16, 185, 129, 0.15);
+      border-radius: 16px; padding: 14px 18px; margin-bottom: 22px;
+      display: flex; align-items: flex-start; gap: 12px;
+      backdrop-filter: blur(10px);
+    }
+    .info-banner-icon {
+      width: 38px; height: 38px;
+      background: rgba(16, 185, 129, 0.12);
+      border-radius: 12px;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .info-banner-icon svg { width: 18px; height: 18px; color: var(--accent); }
+    .info-banner-content h4 { font-size: 0.88rem; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+    .info-banner-content p { font-size: 0.78rem; color: var(--muted); line-height: 1.5; }
+
+    /* Form Fields */
+    .form-group { margin-bottom: 15px; }
+    .input-wrapper { position: relative; display: flex; align-items: center; }
+    .input-icon {
+      position: absolute; left: 18px; color: var(--muted);
+      display: flex; pointer-events: none; z-index: 1;
+    }
+    .input-icon svg { width: 18px; height: 18px; }
+    .form-input {
+      width: 100%; height: 52px;
+      background: var(--input-bg);
+      border: 2px solid var(--border);
+      border-radius: 16px;
+      padding: 0 18px 0 48px;
+      font-family: inherit; font-size: 0.9rem; color: var(--text);
+      outline: none; transition: all 0.3s;
+    }
+    .form-input::placeholder { color: #64748b; font-size: 0.85rem; }
+    .form-input:focus {
+      border-color: var(--primary);
+      background: rgba(15, 23, 42, 0.95);
+      box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.08), 0 0 20px rgba(16, 185, 129, 0.05);
+    }
+    .form-input.error { border-color: var(--error); }
+    .form-input.success { border-color: var(--success); }
+
+    .password-toggle {
+      position: absolute; right: 14px;
+      background: none; border: none; cursor: pointer;
+      color: var(--muted); display: flex; padding: 6px; z-index: 1;
+    }
+    .password-toggle:hover { color: var(--primary); }
+    .password-toggle svg { width: 18px; height: 18px; }
+
+    .strength-meter { height: 5px; background: var(--border); border-radius: 3px; margin-top: 8px; overflow: hidden; }
+    .strength-bar { height: 100%; width: 0%; border-radius: 3px; transition: all 0.3s; }
+
+    .referral-feedback { font-size: 0.8rem; margin-top: 6px; padding-left: 4px; display: none; font-weight: 600; }
+    .referral-feedback.valid { color: var(--success); display: block; }
+    .referral-feedback.invalid { color: var(--error); display: block; }
+    .referral-feedback.checking { color: var(--muted); display: block; }
+
+    /* Submit Button */
+    .submit-btn {
+      width: 100%; height: 54px;
+      background: linear-gradient(135deg, var(--primary) 0%, #059669 100%);
+      color: white; font-family: inherit; font-size: 1rem; font-weight: 700;
+      border: none; border-radius: 16px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; gap: 10px;
+      margin-top: 22px; transition: all 0.3s;
+      position: relative; overflow: hidden;
+      box-shadow: 0 4px 20px rgba(16, 185, 129, 0.3);
+    }
+    .submit-btn::before {
+      content: '';
+      position: absolute; top: 0; left: -100%;
+      width: 100%; height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+      transition: left 0.5s;
+    }
+    .submit-btn:hover::before { left: 100%; }
+    .submit-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 30px rgba(16, 185, 129, 0.45);
+    }
+    .submit-btn:active { transform: scale(0.98); }
+    .submit-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+    .submit-btn svg { width: 20px; height: 20px; }
+
+    .spinner {
+      width: 22px; height: 22px;
+      border: 3px solid rgba(255,255,255,0.3);
+      border-top-color: white; border-radius: 50%;
+      animation: spin 0.6s linear infinite; display: none;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .signin-link { text-align: center; margin-top: 22px; font-size: 0.88rem; color: var(--muted); }
+    .signin-link a { color: var(--primary); font-weight: 700; text-decoration: none; margin-left: 4px; }
+    .signin-link a:hover { color: var(--accent); }
+
+    /* Navigation */
+    .nav-link {
+      position: fixed; top: 20px; right: 20px;
+      background: var(--card); backdrop-filter: blur(20px);
+      border: 1px solid var(--card-border);
+      border-radius: 50px; padding: 10px 22px;
+      color: var(--text); text-decoration: none;
+      font-weight: 600; font-size: 0.88rem;
+      transition: all 0.3s; z-index: 10;
+    }
+    .nav-link:hover {
+      border-color: var(--primary);
+      box-shadow: var(--glow-green);
+      background: rgba(16, 185, 129, 0.1);
+    }
+
+    /* Invite Badge */
+    .invite-badge {
+      background: rgba(16, 185, 129, 0.08);
+      border: 1px solid rgba(16, 185, 129, 0.25);
+      border-radius: 50px; padding: 10px 20px;
+      display: none; align-items: center; gap: 8px;
+      font-size: 0.84rem; color: var(--accent); font-weight: 600;
+      backdrop-filter: blur(10px);
+    }
+    .invite-badge.show { display: inline-flex; }
+    .invite-badge svg { width: 16px; height: 16px; }
+
+    @media (max-width: 480px) {
+      .container { gap: 20px; }
+      .register-card { padding: 24px 18px; }
+      .logo-name { font-size: 1.5rem; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- BACKGROUND EFFECTS -->
+<div class="bg-orb green"></div>
+<div class="bg-orb blue"></div>
+<div class="bg-orb purple"></div>
+<div class="grid-overlay"></div>
+
+<!-- FLOATING PARTICLES -->
+<div class="particles-container" id="particlesContainer"></div>
+
+<!-- Success Toast -->
+<div class="success-toast" id="successToast">
+  <div class="success-toast-icon">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+  </div>
+  <div class="success-toast-content">
+    <h4>Registration Successful! 🎉</h4>
+    <p id="toastMessage">Your account has been created. Redirecting to dashboard...</p>
+  </div>
+</div>
+
+<!-- Sign In -->
+<a href="login.html" class="nav-link">Sign In</a>
+
+<!-- Main Container -->
+<div class="container">
+  
+  <div class="logo-section">
+    <a class="logo" href="#">
+      <div class="logo-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+        </svg>
+      </div>
+      <span class="logo-name">Ev<span>onance</span></span>
+    </a>
+    <p class="logo-subtitle">Smart Digital Wallet</p>
+  </div>
+
+  <div class="invite-badge" id="inviteBadge">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="8.5" cy="7" r="4"/><polyline points="17 11 19 13 23 9"/></svg>
+    Referral code <strong id="inviteCode">—</strong> applied
+  </div>
+
+  <div class="register-card">
+    <h2>Create Account</h2>
+    <p class="subtitle">Join Evonance and start your financial journey</p>
+
+    <div class="info-banner">
+      <div class="info-banner-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+      </div>
+      <div class="info-banner-content">
+        <h4>Get Started with Evonance</h4>
+        <p>Create your account to access Naira deposit and withdrawal wallets. Fast, secure, and reliable.</p>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <div class="input-wrapper">
+        <span class="input-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="8.5" cy="7" r="4"/><polyline points="17 11 19 13 23 9"/></svg></span>
+        <input type="text" class="form-input" id="referral" placeholder="Referral code (optional)" autocomplete="off" />
+      </div>
+      <div class="referral-feedback" id="referralFeedback"></div>
+    </div>
+
+    <div class="form-group">
+      <div class="input-wrapper">
+        <span class="input-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M22 7l-10 7L2 7"/></svg></span>
+        <input type="email" class="form-input" id="email" placeholder="Email address" autocomplete="email" />
+      </div>
+    </div>
+
+    <div class="form-group">
+      <div class="input-wrapper">
+        <span class="input-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg></span>
+        <input type="tel" class="form-input" id="phone" placeholder="Phone number" autocomplete="tel" />
+      </div>
+    </div>
+
+    <div class="form-group">
+      <div class="input-wrapper">
+        <span class="input-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></span>
+        <input type="password" class="form-input" id="password" placeholder="Create password" autocomplete="new-password" />
+        <button class="password-toggle" onclick="togglePassword('password', this)" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        </button>
+      </div>
+      <div class="strength-meter"><div class="strength-bar" id="strengthBar"></div></div>
+    </div>
+
+    <div class="form-group">
+      <div class="input-wrapper">
+        <span class="input-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></span>
+        <input type="password" class="form-input" id="confirmPassword" placeholder="Confirm password" autocomplete="new-password" />
+        <button class="password-toggle" onclick="togglePassword('confirmPassword', this)" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <button class="submit-btn" id="registerBtn" onclick="handleRegister()">
+      <div class="spinner" id="spinner"></div>
+      <span id="btnText">Create Account</span>
+      <svg id="btnIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+    </button>
+
+    <p class="signin-link">Already have an account?<a href="login.html">Sign In</a></p>
+  </div>
+</div>
+
+<script>
+  // ============ CREATE FLOATING PARTICLES ============
+  (function() {
+    const container = document.getElementById('particlesContainer');
+    const colors = ['dot', 'gold', 'blue', 'purple'];
+    const sizes = ['', 'small', 'large'];
+    
+    for (let i = 0; i < 50; i++) {
+      const particle = document.createElement('div');
+      const colorClass = colors[Math.floor(Math.random() * colors.length)];
+      const sizeClass = sizes[Math.floor(Math.random() * sizes.length)];
+      
+      particle.className = `particle particle-dot ${sizeClass} ${colorClass}`;
+      particle.style.left = Math.random() * 100 + '%';
+      particle.style.animationDuration = (Math.random() * 15 + 10) + 's';
+      particle.style.animationDelay = (Math.random() * 10) + 's';
+      
+      container.appendChild(particle);
+    }
+  })();
+</script>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getAuth, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+  import { getFirestore, doc, setDoc, serverTimestamp, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyDT0ACobk5YMFgrqxb-VOnfELXTyssrOtA",
+    authDomain: "newpro-d830e.firebaseapp.com",
+    projectId: "newpro-d830e",
+    storageBucket: "newpro-d830e.firebasestorage.app",
+    messagingSenderId: "642315724384",
+    appId: "1:642315724384:web:19def936898718e9300505"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+
+  function showSuccessToast(message) {
+    const toast = document.getElementById('successToast');
+    document.getElementById('toastMessage').textContent = message;
+    toast.classList.add('show');
+  }
+
+  function setLoading(loading) {
+    const btn = document.getElementById('registerBtn');
+    document.getElementById('spinner').style.display = loading ? 'block' : 'none';
+    document.getElementById('btnIcon').style.display = loading ? 'none' : 'block';
+    document.getElementById('btnText').textContent = loading ? 'Creating Account...' : 'Create Account';
+    btn.disabled = loading;
+  }
+
+  function setFieldStatus(fieldId, status) {
+    const field = document.getElementById(fieldId);
+    field.classList.remove('error', 'success');
+    if (status) field.classList.add(status);
+  }
+
+  function getErrorMessage(code) {
+    const errors = {
+      'auth/email-already-in-use': 'This email is already registered.',
+      'auth/invalid-email': 'Please enter a valid email address.',
+      'auth/weak-password': 'Password too weak. Use at least 6 characters.',
+      'auth/network-request-failed':'Network error. Check your connection.',
+      'auth/too-many-requests': 'Too many attempts. Please wait.',
+    };
+    return errors[code] || 'Something went wrong. Please try again.';
+  }
+
+  function getReferralFromURL() {
+    return new URLSearchParams(window.location.search).get('ref') || null;
+  }
+
+  function autoFillReferral(code) {
+    if (!code) return;
+    document.getElementById('referral').value = code.toUpperCase();
+    document.getElementById('inviteCode').textContent = code.toUpperCase();
+    document.getElementById('inviteBadge').classList.add('show');
+    validateReferral();
+  }
+
+  let validationTimeout;
+  window.validateReferral = function() {
+    clearTimeout(validationTimeout);
+    const code = document.getElementById('referral').value.trim().toUpperCase();
+    const feedback = document.getElementById('referralFeedback');
+    const input = document.getElementById('referral');
+    
+    if (!code || code.length < 5) {
+      feedback.className = 'referral-feedback'; feedback.textContent = '';
+      setFieldStatus('referral', null); return;
+    }
+    
+    feedback.className = 'referral-feedback checking'; feedback.textContent = 'Checking...';
+    setFieldStatus('referral', null);
+    
+    validationTimeout = setTimeout(async () => {
+      try {
+        const codeDoc = await getDoc(doc(db, 'referralCodes', code));
+        if (codeDoc.exists()) {
+          const userDoc = await getDoc(doc(db, 'users', codeDoc.data().uid));
+          if (userDoc.exists()) {
+            feedback.className = 'referral-feedback valid';
+            feedback.textContent = '✓ Valid referral code';
+            setFieldStatus('referral', 'success'); return;
+          }
+        }
+        feedback.className = 'referral-feedback invalid';
+        feedback.textContent = '✗ Invalid referral code';
+        setFieldStatus('referral', 'error');
+      } catch { feedback.className = 'referral-feedback invalid'; feedback.textContent = 'Error'; setFieldStatus('referral', 'error'); }
+    }, 500);
+  };
+
+  window.togglePassword = function(fieldId, button) {
+    const input = document.getElementById(fieldId);
+    const isText = input.type === 'text';
+    input.type = isText ? 'password' : 'text';
+    button.innerHTML = isText 
+      ? `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`
+      : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>`;
+  };
+
+  document.addEventListener('DOMContentLoaded', () => {
+    const refCode = getReferralFromURL();
+    if (refCode) autoFillReferral(refCode);
+    document.getElementById('referral').addEventListener('input', validateReferral);
+    
+    document.getElementById('password').addEventListener('input', (e) => {
+      const p = e.target.value; const bar = document.getElementById('strengthBar');
+      let s = 0;
+      if (p.length >= 6) s++; if (p.length >= 8) s++; if (/[A-Z]/.test(p)) s++;
+      if (/[0-9]/.test(p)) s++; if (/[^A-Za-z0-9]/.test(p)) s++;
+      bar.style.width = (s/5)*100 + '%';
+      bar.style.background = s <= 2 ? '#ef4444' : s <= 3 ? '#f59e0b' : '#10b981';
+    });
+
+    document.querySelectorAll('.form-input').forEach(input => {
+      input.addEventListener('keypress', (e) => { if (e.key === 'Enter') handleRegister(); });
+    });
+  });
+
+  window.handleRegister = async function() {
+    const email = document.getElementById('email').value.trim();
+    const phone = document.getElementById('phone').value.trim();
+    const password = document.getElementById('password').value;
+    const confirm = document.getElementById('confirmPassword').value;
+    const referralCode = document.getElementById('referral').value.trim().toUpperCase();
+
+    if (!email) { alert('Please enter your email.'); return; }
+    if (!phone) { alert('Please enter your phone number.'); return; }
+    if (!password || password.length < 6) { alert('Password must be at least 6 characters.'); return; }
+    if (password !== confirm) { alert('Passwords do not match.'); return; }
+    const cleanPhone = phone.replace(/\s/g, '');
+    if (!/^(\+234|0)?[789]\d{9}$/.test(cleanPhone)) { alert('Enter a valid Nigerian phone number.'); return; }
+
+    setLoading(true);
+    try {
+      const cred = await createUserWithEmailAndPassword(auth, email, password);
+      const uid = cred.user.uid;
+      let referredBy = null;
+
+      if (referralCode) {
+        const codeDoc = await getDoc(doc(db, 'referralCodes', referralCode));
+        if (codeDoc.exists()) {
+          const userDoc = await getDoc(doc(db, 'users', codeDoc.data().uid));
+          if (userDoc.exists() && codeDoc.data().uid !== uid) referredBy = codeDoc.data().uid;
+        }
+      }
+
+      const shortCode = uid.substring(0, 8).toUpperCase();
+
+      await setDoc(doc(db, 'users', uid), {
+        uid, email, phone: cleanPhone, referredBy, referralCode: shortCode,
+        depositWallet: 0, withdrawalWallet: 0, totalDeposits: 0, totalWithdrawals: 0,
+        activeInvestments: 0, referralEarnings: 0, totalEarnings: 0,
+        currency: 'NGN', createdAt: serverTimestamp(), status: 'active'
+      });
+
+      await setDoc(doc(db, 'referralCodes', shortCode), { uid, createdAt: serverTimestamp() });
+
+      setLoading(false);
+      showSuccessToast('Account created successfully! Redirecting to your dashboard...');
+      setTimeout(() => { window.location.href = 'dashboard.html'; }, 2000);
+    } catch (error) {
+      setLoading(false);
+      alert(getErrorMessage(error.code));
+    }
+  };
+</script>
+
+</body>
+</html>
