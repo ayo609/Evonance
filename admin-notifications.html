@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
+  <title>Evonance – Admin Notifications</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0a0e17; --card: #111827; --card-hover: #1a2332;
+      --primary: #f59e0b; --primary-dark: #d97706; --primary-soft: rgba(245, 158, 11, 0.1);
+      --accent: #fbbf24; --text: #f1f5f9; --muted: #94a3b8; --border: #1e293b;
+      --input-bg: #0f172a; --success: #10b981; --error: #ef4444; --warning: #f59e0b; --info: #3b82f6; --purple: #8b5cf6;
+    }
+    body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); min-height: 100vh; color: var(--text); display: flex; }
+    
+    .sidebar { width: 260px; min-height: 100vh; background: var(--card); border-right: 1px solid var(--border); padding: 20px 0; position: fixed; top: 0; left: 0; bottom: 0; z-index: 100; display: flex; flex-direction: column; overflow-y: auto; }
+    .sidebar-logo { display: flex; align-items: center; gap: 10px; padding: 0 20px 20px; border-bottom: 1px solid var(--border); margin-bottom: 16px; }
+    .sidebar-logo-icon { width: 38px; height: 38px; background: linear-gradient(135deg, var(--primary), #fbbf24); border-radius: 10px; display: flex; align-items: center; justify-content: center; }
+    .sidebar-logo-icon svg { width: 20px; height: 20px; color: #1a1a1a; }
+    .sidebar-brand { font-size: 1.1rem; font-weight: 800; color: var(--text); }
+    .sidebar-brand span { color: var(--primary); }
+    .sidebar-nav { flex: 1; padding: 0 12px; }
+    .sidebar-link { display: flex; align-items: center; gap: 10px; padding: 12px 16px; border-radius: 12px; color: var(--muted); text-decoration: none; font-size: 0.85rem; font-weight: 500; transition: all 0.2s; margin-bottom: 4px; }
+    .sidebar-link:hover { background: var(--card-hover); color: var(--text); }
+    .sidebar-link.active { background: var(--primary-soft); color: var(--primary); font-weight: 600; }
+    .sidebar-link svg { width: 20px; height: 20px; flex-shrink: 0; }
+    .sidebar-footer { padding: 16px 20px 0; border-top: 1px solid var(--border); margin-top: auto; }
+    .sidebar-user { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+    .sidebar-avatar { width: 36px; height: 36px; background: var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.85rem; color: #1a1a1a; }
+    .sidebar-user-info { flex: 1; }
+    .sidebar-user-name { font-size: 0.8rem; font-weight: 600; }
+    .sidebar-user-role { font-size: 0.68rem; color: var(--primary); }
+    .sidebar-logout { display: flex; align-items: center; gap: 8px; padding: 10px 14px; border-radius: 10px; color: #fca5a5; cursor: pointer; font-size: 0.82rem; font-weight: 500; transition: all 0.2s; background: none; border: none; width: 100%; font-family: inherit; }
+    .sidebar-logout:hover { background: rgba(239, 68, 68, 0.1); }
+    .sidebar-logout svg { width: 18px; height: 18px; }
+    
+    .main-content { flex: 1; margin-left: 260px; padding: 24px; }
+    .page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; flex-wrap: wrap; gap: 12px; }
+    .page-title { font-size: 1.5rem; font-weight: 800; letter-spacing: -0.5px; }
+    
+    .content-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    
+    .section-card { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 24px; }
+    .section-card h3 { font-size: 1.05rem; font-weight: 700; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+    .section-card h3 svg { width: 20px; height: 20px; color: var(--primary); }
+    
+    .form-group { margin-bottom: 14px; }
+    .form-label { display: block; font-size: 0.78rem; font-weight: 600; color: var(--muted); margin-bottom: 6px; }
+    .form-input { width: 100%; height: 46px; background: var(--input-bg); border: 2px solid var(--border); border-radius: 12px; padding: 0 14px; font-family: inherit; font-size: 0.9rem; color: var(--text); outline: none; }
+    .form-input:focus { border-color: var(--primary); }
+    textarea.form-input { height: 120px; padding: 14px; resize: vertical; }
+    
+    .target-options { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+    .target-option { padding: 8px 14px; background: var(--input-bg); border: 2px solid var(--border); border-radius: 50px; color: var(--muted); font-family: inherit; font-size: 0.78rem; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+    .target-option:hover { border-color: var(--primary); color: var(--text); }
+    .target-option.selected { border-color: var(--purple); background: rgba(139,92,246,0.1); color: #a78bfa; }
+    
+    .submit-btn { width: 100%; padding: 12px; background: var(--purple); color: white; border: none; border-radius: 12px; font-family: inherit; font-size: 0.9rem; font-weight: 700; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; }
+    .submit-btn:hover { background: #7c3aed; }
+    .submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    
+    .notification-list { display: flex; flex-direction: column; gap: 8px; max-height: 500px; overflow-y: auto; }
+    .notif-item { background: var(--input-bg); border: 1px solid var(--border); border-radius: 12px; padding: 14px; display: flex; align-items: flex-start; gap: 10px; transition: all 0.2s; }
+    .notif-item:hover { border-color: var(--purple); }
+    .notif-content { flex: 1; min-width: 0; }
+    .notif-content h4 { font-size: 0.85rem; font-weight: 600; margin-bottom: 4px; }
+    .notif-content p { font-size: 0.75rem; color: var(--muted); line-height: 1.4; }
+    .notif-time { font-size: 0.68rem; color: var(--muted); margin-top: 4px; }
+    .notif-target { font-size: 0.62rem; padding: 3px 8px; border-radius: 50px; background: rgba(139,92,246,0.15); color: #a78bfa; display: inline-block; margin-top: 4px; }
+    .delete-btn { background: none; border: none; color: #f87171; cursor: pointer; padding: 4px; border-radius: 6px; transition: all 0.2s; flex-shrink: 0; }
+    .delete-btn:hover { background: rgba(239,68,68,0.1); }
+    .delete-btn svg { width: 18px; height: 18px; }
+    
+    .spinner { width: 18px; height: 18px; border: 2.5px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; animation: spin 0.6s linear infinite; display: none; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    
+    .toast { position: fixed; top: 20px; right: 20px; background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 16px 24px; display: flex; align-items: center; gap: 12px; z-index: 1000; transform: translateX(120%); transition: transform 0.5s; box-shadow: 0 20px 40px rgba(0,0,0,0.5); max-width: 380px; }
+    .toast.show { transform: translateX(0); }
+    .toast.success { border-left: 4px solid var(--success); }
+    .toast-icon { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+    .toast.success .toast-icon { background: rgba(16,185,129,0.15); }
+    .toast-icon svg { width: 20px; height: 20px; color: var(--success); }
+    .toast-content h4 { font-size: 0.9rem; font-weight: 700; }
+    .toast-content p { font-size: 0.75rem; color: var(--muted); }
+    .no-data { text-align: center; padding: 30px; color: var(--muted); font-size: 0.85rem; }
+    .badge-count { background: var(--purple); color: white; font-size: 0.65rem; padding: 2px 8px; border-radius: 50px; margin-left: 4px; }
+    
+    @media (max-width: 768px) { .sidebar { display: none; } .main-content { margin-left: 0; } .content-grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="sidebar-logo-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg></div>
+    <span class="sidebar-brand">Ev<span>onance</span></span>
+  </div>
+  <nav class="sidebar-nav">
+    <a href="admin-dashboard.html" class="sidebar-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Dashboard</a>
+    <a href="admin-users.html" class="sidebar-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>Users</a>
+    <a href="admin-deposits.html" class="sidebar-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>Deposits</a>
+    <a href="admin-withdrawals.html" class="sidebar-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="12" y1="10" x2="12" y2="18"/><polyline points="9 15 12 18 15 15"/></svg>Withdrawals</a>
+    <a href="admin-investments.html" class="sidebar-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Investments</a>
+    <a href="admin-notifications.html" class="sidebar-link active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>Notifications</a>
+    <a href="admin-settings.html" class="sidebar-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>Settings</a>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="sidebar-user"><div class="sidebar-avatar">A</div><div class="sidebar-user-info"><div class="sidebar-user-name">Admin</div><div class="sidebar-user-role">Administrator</div></div></div>
+    <button class="sidebar-logout" onclick="handleLogout()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>Logout</button>
+  </div>
+</aside>
+
+<main class="main-content">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Notifications</h1>
+      <p style="color:var(--muted);font-size:0.85rem;">Send announcements and manage notifications</p>
+    </div>
+  </div>
+
+  <div class="content-grid">
+    <!-- Send Notification -->
+    <div class="section-card">
+      <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg> Send New Notification</h3>
+      
+      <div class="form-group">
+        <label class="form-label">Target Audience</label>
+        <div class="target-options" id="targetOptions">
+          <button class="target-option selected" onclick="selectTarget('all', this)">👥 All Users</button>
+          <button class="target-option" onclick="selectTarget('active_investors', this)">📈 Active Investors</button>
+          <button class="target-option" onclick="selectTarget('no_investment', this)">🆕 No Investment</button>
+        </div>
+      </div>
+      
+      <div class="form-group">
+        <label class="form-label">Title</label>
+        <input type="text" class="form-input" id="notifTitle" placeholder="Notification title" />
+      </div>
+      
+      <div class="form-group">
+        <label class="form-label">Message</label>
+        <textarea class="form-input" id="notifMessage" placeholder="Enter your message here..."></textarea>
+      </div>
+      
+      <button class="submit-btn" id="sendBtn" onclick="sendNotification()">
+        <div class="spinner" id="sendSpinner"></div>
+        <span id="sendText">📨 Send Notification</span>
+      </button>
+    </div>
+
+    <!-- Notification History -->
+    <div class="section-card">
+      <h3>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M22 7l-10 7L2 7"/></svg>
+        Published Notifications
+        <span class="badge-count" id="totalCount">0</span>
+      </h3>
+      <div class="notification-list" id="notificationHistory">
+        <div class="no-data">Loading...</div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- Toast -->
+<div class="toast success" id="toast"><div class="toast-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div><div class="toast-content"><h4>Success</h4><p id="toastMsg"></p></div></div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+  import { getFirestore, doc, getDoc, updateDoc, deleteDoc, collection, query, where, orderBy, getDocs, serverTimestamp, addDoc, writeBatch } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+  const firebaseConfig = { apiKey: "AIzaSyDT0ACobk5YMFgrqxb-VOnfELXTyssrOtA", authDomain: "newpro-d830e.firebaseapp.com", projectId: "newpro-d830e", storageBucket: "newpro-d830e.firebasestorage.app", messagingSenderId: "642315724384", appId: "1:642315724384:web:19def936898718e9300505" };
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+
+  let selectedTarget = 'all';
+
+  function showToast(msg) { const t = document.getElementById('toast'); document.getElementById('toastMsg').textContent = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 3000); }
+  function formatDate(ts) { if(!ts) return ''; const d = ts.toDate?ts.toDate():new Date(ts); const now = new Date(); const diff = now - d; const days = Math.floor(diff/(1000*60*60*24)); if(days===0) { const hrs = Math.floor(diff/(1000*60*60)); if(hrs===0) { const mins = Math.floor(diff/(1000*60)); return mins<=1?'Just now':mins+'m ago'; } return hrs+'h ago'; } if(days===1) return 'Yesterday'; if(days<7) return days+'d ago'; return d.toLocaleDateString('en-NG',{month:'short',day:'numeric'}); }
+  function getTargetLabel(t) { const labels = { all: 'All Users', active_investors: 'Active Investors', no_investment: 'No Investment', specific: 'Specific User' }; return labels[t] || t; }
+
+  window.handleLogout = async () => { await signOut(auth); window.location.href = 'admin-login.html'; };
+
+  window.selectTarget = (target, btn) => {
+    selectedTarget = target;
+    document.querySelectorAll('#targetOptions .target-option').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+  };
+
+  // Send notification to users based on target
+  window.sendNotification = async () => {
+    const title = document.getElementById('notifTitle').value.trim();
+    const message = document.getElementById('notifMessage').value.trim();
+
+    if(!title || !message) { showToast('Please fill in both title and message'); return; }
+
+    const sendBtn = document.getElementById('sendBtn');
+    const spinner = document.getElementById('sendSpinner');
+    const sendText = document.getElementById('sendText');
+    sendBtn.disabled = true;
+    spinner.style.display = 'block';
+    sendText.textContent = 'Sending...';
+
+    try {
+      // Save to adminNotifications collection for history
+      const adminNotifRef = await addDoc(collection(db, 'adminNotifications'), {
+        title, message, target: selectedTarget, sentAt: serverTimestamp(), sentBy: auth.currentUser?.email || 'Admin'
+      });
+
+      // Get target users
+      let usersSnapshot;
+      if(selectedTarget === 'all') {
+        usersSnapshot = await getDocs(collection(db, 'users'));
+      } else if(selectedTarget === 'active_investors') {
+        usersSnapshot = await getDocs(query(collection(db, 'users'), where('activeInvestments', '>', 0)));
+      } else if(selectedTarget === 'no_investment') {
+        usersSnapshot = await getDocs(query(collection(db, 'users'), where('activeInvestments', '==', 0)));
+      } else {
+        usersSnapshot = await getDocs(collection(db, 'users'));
+      }
+
+      if(usersSnapshot.empty) {
+        showToast('No users found for this target');
+        sendBtn.disabled = false;
+        spinner.style.display = 'none';
+        sendText.textContent = '📨 Send Notification';
+        return;
+      }
+
+      // Send to all target users using batch writes for efficiency
+      const batchSize = 500; // Firestore batch limit
+      let batch = writeBatch(db);
+      let count = 0;
+      let totalSent = 0;
+
+      for(const userDoc of usersSnapshot.docs) {
+        const notifRef = doc(collection(db, 'notifications'));
+        batch.set(notifRef, {
+          uid: userDoc.id,
+          adminNotifId: adminNotifRef.id,
+          title,
+          message,
+          type: 'admin_announcement',
+          read: false,
+          createdAt: serverTimestamp()
+        });
+        count++;
+        totalSent++;
+
+        if(count >= batchSize) {
+          await batch.commit();
+          batch = writeBatch(db);
+          count = 0;
+        }
+      }
+
+      if(count > 0) {
+        await batch.commit();
+      }
+
+      // Clear form
+      document.getElementById('notifTitle').value = '';
+      document.getElementById('notifMessage').value = '';
+
+      sendBtn.disabled = false;
+      spinner.style.display = 'none';
+      sendText.textContent = '📨 Send Notification';
+
+      showToast(`Notification sent to ${totalSent} users!`);
+      loadNotificationHistory();
+
+    } catch(error) {
+      console.error('Error sending notification:', error);
+      showToast('Error sending notification');
+      sendBtn.disabled = false;
+      spinner.style.display = 'none';
+      sendText.textContent = '📨 Send Notification';
+    }
+  };
+
+  // Load notification history
+  async function loadNotificationHistory() {
+    const list = document.getElementById('notificationHistory');
+    try {
+      const q = query(collection(db, 'adminNotifications'), orderBy('sentAt', 'desc'));
+      const snapshot = await getDocs(q);
+
+      document.getElementById('totalCount').textContent = snapshot.size;
+
+      if(snapshot.empty) {
+        list.innerHTML = '<div class="no-data">No notifications sent yet</div>';
+        return;
+      }
+
+      list.innerHTML = '';
+      snapshot.forEach(doc => {
+        const n = doc.data();
+        list.innerHTML += `
+          <div class="notif-item">
+            <div class="notif-content">
+              <h4>${n.title || 'No title'}</h4>
+              <p>${n.message || ''}</p>
+              <span class="notif-target">${getTargetLabel(n.target)}</span>
+              <div class="notif-time">${formatDate(n.sentAt)}</div>
+            </div>
+            <button class="delete-btn" onclick="deleteNotification('${doc.id}')" title="Delete this notification from all users">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+            </button>
+          </div>`;
+      });
+    } catch(error) {
+      console.error('Error loading history:', error);
+    }
+  }
+
+  // Delete notification from admin history AND all user notifications
+  window.deleteNotification = async (adminNotifId) => {
+    if(!confirm('Delete this notification? It will be removed from all users as well.')) return;
+
+    try {
+      // Delete from admin history
+      await deleteDoc(doc(db, 'adminNotifications', adminNotifId));
+
+      // Delete all user notifications with this adminNotifId
+      const userNotifsQuery = query(collection(db, 'notifications'), where('adminNotifId', '==', adminNotifId));
+      const snapshot = await getDocs(userNotifsQuery);
+
+      const batchSize = 500;
+      let batch = writeBatch(db);
+      let count = 0;
+      let totalDeleted = 0;
+
+      for(const notifDoc of snapshot.docs) {
+        batch.delete(notifDoc.ref);
+        count++;
+        totalDeleted++;
+
+        if(count >= batchSize) {
+          await batch.commit();
+          batch = writeBatch(db);
+          count = 0;
+        }
+      }
+
+      if(count > 0) {
+        await batch.commit();
+      }
+
+      showToast(`Notification deleted from ${totalDeleted} users`);
+      loadNotificationHistory();
+    } catch(error) {
+      console.error('Error deleting notification:', error);
+      showToast('Error deleting notification');
+    }
+  };
+
+  onAuthStateChanged(auth, async (user) => {
+    if(user) {
+      const ad = await getDoc(doc(db, 'adminUsers', user.uid));
+      if(ad.exists() && ad.data().role === 'admin') {
+        loadNotificationHistory();
+      } else {
+        window.location.href = 'admin-login.html';
+      }
+    } else {
+      window.location.href = 'admin-login.html';
+    }
+  });
+</script>
+</body>
+</html>
