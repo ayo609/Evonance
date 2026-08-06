@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
+  <title>Evonance – Transactions</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0a0f1a;
+      --card: rgba(17, 25, 40, 0.9);
+      --card-border: rgba(255, 255, 255, 0.06);
+      --primary: #10b981;
+      --primary-dark: #059669;
+      --primary-soft: rgba(16, 185, 129, 0.1);
+      --accent: #34d399;
+      --text: #f1f5f9;
+      --muted: #94a3b8;
+      --border: rgba(255, 255, 255, 0.06);
+      --input-bg: rgba(15, 23, 42, 0.8);
+      --success: #10b981;
+      --error: #ef4444;
+      --warning: #f59e0b;
+      --info: #3b82f6;
+      --purple: #8b5cf6;
+      --glow-card: 0 4px 24px rgba(0, 0, 0, 0.3);
+    }
+
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: var(--bg);
+      min-height: 100vh;
+      color: var(--text);
+      padding-bottom: 80px;
+    }
+
+    .toast {
+      position: fixed; top: 20px; left: 20px;
+      background: var(--card); backdrop-filter: blur(20px);
+      border: 1px solid var(--border); border-radius: 16px; padding: 16px 24px;
+      display: flex; align-items: center; gap: 12px;
+      z-index: 1000; transform: translateX(-120%);
+      transition: transform 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4); max-width: 400px;
+    }
+    .toast.show { transform: translateX(0); }
+    .toast.success { border-left: 4px solid var(--success); }
+    .toast-icon { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .toast.success .toast-icon { background: rgba(16,185,129,0.15); }
+    .toast-icon svg { width: 24px; height: 24px; color: var(--success); }
+    .toast-content h4 { font-size: 0.95rem; font-weight: 700; color: var(--text); margin-bottom: 2px; }
+    .toast-content p { font-size: 0.8rem; color: var(--muted); line-height: 1.3; }
+
+    .header {
+      background: var(--card); backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border); padding: 16px 20px;
+      position: sticky; top: 0; z-index: 100;
+    }
+    .header-content { display: flex; align-items: center; justify-content: space-between; max-width: 700px; margin: 0 auto; }
+    .header-left { display: flex; align-items: center; gap: 12px; }
+    .back-btn { background: none; border: none; color: var(--muted); cursor: pointer; padding: 8px; border-radius: 10px; display: flex; transition: all 0.2s; text-decoration: none; }
+    .back-btn:hover { background: rgba(255,255,255,0.05); color: var(--text); }
+    .back-btn svg { width: 24px; height: 24px; }
+    .header-title { font-size: 1.2rem; font-weight: 800; letter-spacing: -0.5px; }
+
+    .main-content { max-width: 650px; margin: 0 auto; padding: 20px; display: flex; flex-direction: column; gap: 16px; }
+
+    /* Summary Cards */
+    .summary-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+    .summary-card {
+      background: var(--card); backdrop-filter: blur(20px);
+      border: 1px solid var(--border); border-radius: 14px; padding: 14px 10px;
+      text-align: center; box-shadow: var(--glow-card);
+    }
+    .summary-value { font-size: 0.9rem; font-weight: 800; }
+    .summary-value.green { color: var(--success); }
+    .summary-value.blue { color: #60a5fa; }
+    .summary-value.purple { color: #a78bfa; }
+    .summary-value.red { color: #f87171; }
+    .summary-label { font-size: 0.6rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px; }
+
+    /* Filters */
+    .filter-bar { display: flex; gap: 8px; flex-wrap: wrap; }
+    .filter-btn {
+      padding: 8px 14px; border-radius: 50px; font-family: inherit;
+      font-size: 0.72rem; font-weight: 600; cursor: pointer; transition: all 0.2s;
+      background: var(--card); border: 1px solid var(--border); color: var(--muted);
+    }
+    .filter-btn:hover { border-color: var(--primary); color: var(--text); }
+    .filter-btn.active { background: var(--primary); border-color: var(--primary); color: white; }
+
+    .search-input {
+      width: 100%; height: 44px; background: var(--card);
+      border: 1px solid var(--border); border-radius: 12px;
+      padding: 0 16px; font-family: inherit; font-size: 0.85rem; color: var(--text);
+      outline: none; transition: all 0.3s;
+    }
+    .search-input:focus { border-color: var(--primary); }
+    .search-input::placeholder { color: var(--muted); }
+
+    /* Transaction List */
+    .tx-list { display: flex; flex-direction: column; gap: 8px; }
+    .tx-item {
+      background: var(--card); backdrop-filter: blur(20px);
+      border: 1px solid var(--border); border-radius: 14px; padding: 14px 16px;
+      display: flex; align-items: center; gap: 12px; transition: all 0.2s;
+      box-shadow: var(--glow-card);
+    }
+    .tx-item:hover { border-color: var(--primary); }
+    .tx-icon {
+      width: 42px; height: 42px; border-radius: 12px;
+      display: flex; align-items: center; justify-content: center; font-size: 1.2rem; flex-shrink: 0;
+    }
+    .tx-icon.deposit { background: rgba(59,130,246,0.12); }
+    .tx-icon.withdrawal { background: rgba(239,68,68,0.12); }
+    .tx-icon.referral { background: rgba(139,92,246,0.12); }
+    .tx-icon.investment { background: rgba(245,158,11,0.12); }
+    .tx-icon.return { background: rgba(16,185,129,0.12); }
+    .tx-info { flex: 1; min-width: 0; }
+    .tx-type { font-size: 0.85rem; font-weight: 700; }
+    .tx-desc { font-size: 0.72rem; color: var(--muted); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .tx-meta { font-size: 0.68rem; color: var(--muted); margin-top: 2px; }
+    .tx-right { text-align: right; flex-shrink: 0; }
+    .tx-amount { font-size: 0.9rem; font-weight: 700; }
+    .tx-amount.credit { color: var(--success); }
+    .tx-amount.debit { color: var(--error); }
+    .tx-status {
+      font-size: 0.62rem; font-weight: 700; padding: 3px 8px; border-radius: 50px;
+      text-transform: uppercase; display: inline-block; margin-top: 3px;
+    }
+    .tx-status.completed { background: rgba(16,185,129,0.12); color: var(--success); }
+    .tx-status.pending { background: rgba(245,158,11,0.12); color: var(--warning); }
+    .tx-status.failed { background: rgba(239,68,68,0.12); color: var(--error); }
+
+    .no-data { text-align: center; padding: 40px; color: var(--muted); }
+    .no-data svg { width: 56px; height: 56px; margin-bottom: 12px; opacity: 0.3; }
+    .no-data h3 { font-size: 1rem; margin-bottom: 4px; color: var(--text); }
+    .no-data p { font-size: 0.8rem; }
+
+    .bottom-nav {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      background: var(--card); backdrop-filter: blur(20px);
+      border-top: 1px solid var(--border); display: flex;
+      align-items: center; justify-content: space-around;
+      padding: 8px 0 12px; z-index: 100;
+    }
+    .nav-item { display: flex; flex-direction: column; align-items: center; gap: 4px; text-decoration: none; color: var(--muted); font-size: 0.65rem; font-weight: 600; padding: 4px 12px; border-radius: 12px; }
+    .nav-item.active { color: var(--primary); }
+    .nav-item svg { width: 22px; height: 22px; }
+    .nav-item:hover { color: var(--text); }
+
+    @media (max-width: 480px) {
+      .main-content { padding: 14px; gap: 12px; }
+      .summary-row { grid-template-columns: repeat(2, 1fr); }
+      .tx-item { flex-wrap: wrap; }
+      .tx-right { width: 100%; text-align: left; margin-top: 6px; display: flex; justify-content: space-between; align-items: center; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="toast success" id="toast">
+  <div class="toast-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
+  <div class="toast-content"><h4 id="toastTitle">Success</h4><p id="toastMessage"></p></div>
+</div>
+
+<header class="header">
+  <div class="header-content">
+    <div class="header-left">
+      <a href="dashboard.html" class="back-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg></a>
+      <span class="header-title">Transactions</span>
+    </div>
+  </div>
+</header>
+
+<main class="main-content">
+
+  <!-- Summary -->
+  <div class="summary-row">
+    <div class="summary-card"><div class="summary-value blue" id="sumDeposits">₦0</div><div class="summary-label">Deposits</div></div>
+    <div class="summary-card"><div class="summary-value red" id="sumWithdrawals">₦0</div><div class="summary-label">Withdrawals</div></div>
+    <div class="summary-card"><div class="summary-value purple" id="sumReferrals">₦0</div><div class="summary-label">Referrals</div></div>
+    <div class="summary-card"><div class="summary-value green" id="sumInvestments">₦0</div><div class="summary-label">Investments</div></div>
+  </div>
+
+  <!-- Filters -->
+  <div class="filter-bar" id="typeFilters">
+    <button class="filter-btn active" onclick="filterTx('all', this)">All</button>
+    <button class="filter-btn" onclick="filterTx('deposit', this)">📥 Deposits</button>
+    <button class="filter-btn" onclick="filterTx('withdrawal', this)">📤 Withdrawals</button>
+    <button class="filter-btn" onclick="filterTx('referral_earning', this)">💰 Referrals</button>
+    <button class="filter-btn" onclick="filterTx('investment', this)">📈 Investments</button>
+    <button class="filter-btn" onclick="filterTx('investment_return', this)">🎉 ROI Returns</button>
+  </div>
+
+  <input type="text" class="search-input" id="searchInput" placeholder="🔍 Search transactions..." oninput="renderTransactions()" />
+
+  <!-- Transaction List -->
+  <div class="tx-list" id="txList">
+    <div class="no-data">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M22 7l-10 7L2 7"/></svg>
+      <h3>No Transactions</h3>
+      <p>Your transaction history will appear here.</p>
+    </div>
+  </div>
+
+</main>
+
+<nav class="bottom-nav">
+  <a href="dashboard.html" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>Home</a>
+  <a href="deposit.html" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>Deposit</a>
+  <a href="withdraw.html" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="12" y1="10" x2="12" y2="18"/><polyline points="9 15 12 18 15 15"/></svg>Withdraw</a>
+  <a href="investments.html" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Invest</a>
+  <a href="profile.html" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Profile</a>
+</nav>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+  import { getFirestore, collection, query, where, orderBy, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+  const firebaseConfig = { apiKey: "AIzaSyDT0ACobk5YMFgrqxb-VOnfELXTyssrOtA", authDomain: "newpro-d830e.firebaseapp.com", projectId: "newpro-d830e", storageBucket: "newpro-d830e.firebasestorage.app", messagingSenderId: "642315724384", appId: "1:642315724384:web:19def936898718e9300505" };
+  const app = initializeApp(firebaseConfig); const auth = getAuth(app); const db = getFirestore(app);
+
+  let allTransactions = [];
+  let currentFilter = 'all';
+
+  function showToast(type, title, msg) { const t = document.getElementById('toast'); t.className = 'toast ' + type; document.getElementById('toastTitle').textContent = title; document.getElementById('toastMessage').textContent = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 4000); }
+  function formatNaira(a) { return '₦' + Number(a).toLocaleString('en-NG', { minimumFractionDigits: 2 }); }
+  function formatNairaShort(a) { if(a>=1000000) return '₦'+(a/1000000).toFixed(1)+'M'; if(a>=1000) return '₦'+(a/1000).toFixed(0)+'K'; return '₦'+a; }
+  function formatDate(ts) { if(!ts) return ''; const d = ts.toDate?ts.toDate():new Date(ts); const now = new Date(); const diff = now - d; const days = Math.floor(diff/(1000*60*60*24)); if(days===0) { const h=Math.floor(diff/(1000*60*60)); if(h===0) { const m=Math.floor(diff/(1000*60)); return m<=1?'Just now':m+'m ago'; } return h+'h ago'; } if(days===1) return 'Yesterday'; if(days<7) return days+'d ago'; return d.toLocaleDateString('en-NG',{month:'short',day:'numeric'}); }
+
+  const typeConfig = {
+    deposit: { icon: '📥', class: 'deposit', label: 'Deposit', credit: true },
+    withdrawal: { icon: '📤', class: 'withdrawal', label: 'Withdrawal', credit: false },
+    referral_earning: { icon: '💰', class: 'referral', label: 'Referral Earning', credit: true },
+    investment: { icon: '📈', class: 'investment', label: 'Investment', credit: false },
+    investment_return: { icon: '🎉', class: 'return', label: 'ROI Return', credit: true }
+  };
+
+  window.filterTx = function(type, btn) {
+    currentFilter = type;
+    document.querySelectorAll('#typeFilters .filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    renderTransactions();
+  };
+
+  function renderTransactions() {
+    const list = document.getElementById('txList');
+    const search = document.getElementById('searchInput').value.toLowerCase();
+    
+    let filtered = allTransactions;
+    if(currentFilter !== 'all') filtered = filtered.filter(t => t.type === currentFilter);
+    if(search) filtered = filtered.filter(t => (t.description||'').toLowerCase().includes(search) || (t.type||'').toLowerCase().includes(search));
+
+    if(filtered.length === 0) {
+      list.innerHTML = `<div class="no-data"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M22 7l-10 7L2 7"/></svg><h3>No Transactions</h3><p>${search?'No results match your search.':'Your transactions will appear here.'}</p></div>`;
+      return;
+    }
+
+    list.innerHTML = filtered.map(t => {
+      const cfg = typeConfig[t.type] || { icon: '📋', class: 'deposit', label: t.type, credit: true };
+      const isCredit = cfg.credit;
+      return `
+        <div class="tx-item">
+          <div class="tx-icon ${cfg.class}">${cfg.icon}</div>
+          <div class="tx-info">
+            <div class="tx-type">${cfg.label}</div>
+            <div class="tx-desc">${t.description || ''}</div>
+            <div class="tx-meta">${formatDate(t.createdAt)}</div>
+          </div>
+          <div class="tx-right">
+            <div class="tx-amount ${isCredit?'credit':'debit'}">${isCredit?'+':'-'}${formatNaira(t.amount)}</div>
+            <span class="tx-status ${t.status==='completed'?'completed':t.status==='pending'?'pending':'failed'}">${t.status||'pending'}</span>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  function updateSummary() {
+    let deposits = 0, withdrawals = 0, referrals = 0, investments = 0;
+    allTransactions.forEach(t => {
+      if(t.type==='deposit') deposits += t.amount||0;
+      else if(t.type==='withdrawal') withdrawals += t.amount||0;
+      else if(t.type==='referral_earning') referrals += t.amount||0;
+      else if(t.type==='investment') investments += t.amount||0;
+      else if(t.type==='investment_return') investments += t.amount||0;
+    });
+    document.getElementById('sumDeposits').textContent = formatNairaShort(deposits);
+    document.getElementById('sumWithdrawals').textContent = formatNairaShort(withdrawals);
+    document.getElementById('sumReferrals').textContent = formatNairaShort(referrals);
+    document.getElementById('sumInvestments').textContent = formatNairaShort(investments);
+  }
+
+  async function loadTransactions(uid) {
+    try {
+      const q = query(collection(db, 'transactions'), where('uid', '==', uid), orderBy('createdAt', 'desc'));
+      const snap = await getDocs(q);
+      allTransactions = [];
+      snap.forEach(d => allTransactions.push(d.data()));
+      updateSummary();
+      renderTransactions();
+    } catch(e) { console.error(e); }
+  }
+
+  onAuthStateChanged(auth, (u) => {
+    if(u) loadTransactions(u.uid);
+    else window.location.href = 'login.html';
+  });
+</script>
+</body>
+</html>
