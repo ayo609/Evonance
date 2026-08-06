@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
+  <title>Evonance – Admin Login</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0a0e17;
+      --card: #111827;
+      --card-hover: #1a2332;
+      --primary: #f59e0b;
+      --primary-dark: #d97706;
+      --primary-soft: rgba(245, 158, 11, 0.1);
+      --accent: #fbbf24;
+      --text: #f1f5f9;
+      --muted: #94a3b8;
+      --border: #1e293b;
+      --input-bg: #0f172a;
+      --success: #10b981;
+      --error: #ef4444;
+      --warning: #f59e0b;
+      --info: #3b82f6;
+      --shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+      --glow: 0 0 60px rgba(245, 158, 11, 0.15);
+    }
+
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: var(--bg);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text);
+      background-image: 
+        radial-gradient(ellipse at 20% 20%, rgba(245, 158, 11, 0.05) 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 80%, rgba(245, 158, 11, 0.03) 0%, transparent 50%),
+        radial-gradient(ellipse at 50% 50%, rgba(59, 130, 246, 0.02) 0%, transparent 70%);
+      padding: 20px;
+    }
+
+    /* Background Pattern */
+    .bg-pattern {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      opacity: 0.03;
+      background-image: 
+        linear-gradient(30deg, var(--primary) 12%, transparent 12.5%, transparent 87%, var(--primary) 87.5%, var(--primary)),
+        linear-gradient(150deg, var(--primary) 12%, transparent 12.5%, transparent 87%, var(--primary) 87.5%, var(--primary)),
+        linear-gradient(30deg, var(--primary) 12%, transparent 12.5%, transparent 87%, var(--primary) 87.5%, var(--primary)),
+        linear-gradient(150deg, var(--primary) 12%, transparent 12.5%, transparent 87%, var(--primary) 87.5%, var(--primary));
+      background-size: 80px 140px;
+      background-position: 0 0, 0 0, 40px 70px, 40px 70px;
+    }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      z-index: 1000;
+      transform: translateX(-120%);
+      transition: transform 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+      max-width: 400px;
+    }
+    .toast.show { transform: translateX(0); }
+    .toast.success { border-left: 4px solid var(--success); }
+    .toast.error { border-left: 4px solid var(--error); }
+    .toast-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .toast.success .toast-icon { background: rgba(16, 185, 129, 0.15); }
+    .toast.error .toast-icon { background: rgba(239, 68, 68, 0.15); }
+    .toast-icon svg { width: 24px; height: 24px; }
+    .toast.success .toast-icon svg { color: var(--success); }
+    .toast.error .toast-icon svg { color: var(--error); }
+    .toast-content h4 { font-size: 0.95rem; font-weight: 700; color: var(--text); margin-bottom: 2px; }
+    .toast-content p { font-size: 0.8rem; color: var(--muted); line-height: 1.3; }
+
+    /* Container */
+    .container {
+      width: 100%;
+      max-width: 440px;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* Logo */
+    .logo-section {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+    .logo-icon {
+      width: 64px;
+      height: 64px;
+      background: linear-gradient(135deg, var(--primary), #fbbf24);
+      border-radius: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 16px;
+      box-shadow: 0 12px 32px rgba(245, 158, 11, 0.3);
+      position: relative;
+      overflow: hidden;
+    }
+    .logo-icon::after {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: linear-gradient(45deg, transparent, rgba(255,255,255,0.15), transparent);
+      transform: rotate(45deg);
+    }
+    .logo-icon svg {
+      width: 32px;
+      height: 32px;
+      color: #1a1a1a;
+      position: relative;
+      z-index: 1;
+    }
+    .logo-name {
+      font-size: 1.8rem;
+      font-weight: 900;
+      color: var(--text);
+      letter-spacing: -1px;
+    }
+    .logo-name span {
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .logo-subtitle {
+      font-size: 0.85rem;
+      color: var(--muted);
+      font-weight: 400;
+      margin-top: 4px;
+    }
+    .admin-badge {
+      display: inline-block;
+      background: rgba(245, 158, 11, 0.15);
+      border: 1px solid rgba(245, 158, 11, 0.3);
+      border-radius: 50px;
+      padding: 4px 14px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-top: 8px;
+    }
+
+    /* Login Card */
+    .login-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 32px 28px;
+      box-shadow: var(--shadow);
+      position: relative;
+      overflow: hidden;
+    }
+    .login-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, var(--primary), #fbbf24, var(--primary));
+    }
+    .login-card h2 {
+      font-size: 1.4rem;
+      font-weight: 800;
+      margin-bottom: 4px;
+      letter-spacing: -0.5px;
+      text-align: center;
+    }
+    .login-card .subtitle {
+      color: var(--muted);
+      font-size: 0.85rem;
+      margin-bottom: 24px;
+      text-align: center;
+    }
+
+    /* Security Indicator */
+    .security-indicator {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin-bottom: 20px;
+      padding: 10px;
+      background: rgba(16, 185, 129, 0.05);
+      border: 1px solid rgba(16, 185, 129, 0.15);
+      border-radius: 12px;
+      font-size: 0.75rem;
+      color: var(--success);
+      font-weight: 600;
+    }
+    .security-indicator svg { width: 16px; height: 16px; }
+
+    /* Error Message */
+    .error-box {
+      background: rgba(239, 68, 68, 0.08);
+      border: 1px solid rgba(239, 68, 68, 0.2);
+      border-radius: 12px;
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 16px;
+      display: none;
+    }
+    .error-box.show { display: flex; }
+    .error-box svg { width: 20px; height: 20px; color: var(--error); flex-shrink: 0; }
+    .error-box span { font-size: 0.82rem; color: #fca5a5; }
+
+    /* Form */
+    .form-group { margin-bottom: 16px; }
+    .input-wrapper { position: relative; }
+    .input-icon {
+      position: absolute;
+      left: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--muted);
+      display: flex;
+      pointer-events: none;
+      z-index: 1;
+    }
+    .input-icon svg { width: 18px; height: 18px; }
+    .form-input {
+      width: 100%;
+      height: 52px;
+      background: var(--input-bg);
+      border: 2px solid var(--border);
+      border-radius: 14px;
+      padding: 0 16px 0 46px;
+      font-family: inherit;
+      font-size: 0.9rem;
+      color: var(--text);
+      outline: none;
+      transition: all 0.3s;
+    }
+    .form-input::placeholder { color: #64748b; font-size: 0.85rem; }
+    .form-input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 4px var(--primary-soft);
+    }
+    .form-input.error { border-color: var(--error); }
+
+    .password-toggle {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--muted);
+      display: flex;
+      padding: 8px;
+      z-index: 1;
+    }
+    .password-toggle:hover { color: var(--primary); }
+    .password-toggle svg { width: 18px; height: 18px; }
+
+    /* Remember */
+    .remember-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 20px;
+      cursor: pointer;
+      font-size: 0.82rem;
+      color: var(--muted);
+    }
+    .remember-row input[type="checkbox"] {
+      appearance: none;
+      width: 18px;
+      height: 18px;
+      background: var(--input-bg);
+      border: 2px solid var(--border);
+      border-radius: 5px;
+      cursor: pointer;
+      position: relative;
+      transition: all 0.2s;
+    }
+    .remember-row input[type="checkbox"]:checked {
+      background: var(--primary);
+      border-color: var(--primary);
+    }
+    .remember-row input[type="checkbox"]:checked::after {
+      content: '✓';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: #1a1a1a;
+      font-size: 11px;
+      font-weight: bold;
+    }
+
+    /* Submit Button */
+    .submit-btn {
+      width: 100%;
+      height: 52px;
+      background: linear-gradient(135deg, var(--primary), #d97706);
+      color: #1a1a1a;
+      font-family: inherit;
+      font-size: 1rem;
+      font-weight: 700;
+      border: none;
+      border-radius: 14px;
+      cursor: pointer;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      position: relative;
+      overflow: hidden;
+    }
+    .submit-btn::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+      transition: left 0.5s;
+    }
+    .submit-btn:hover::before { left: 100%; }
+    .submit-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 30px rgba(245, 158, 11, 0.4);
+    }
+    .submit-btn:active { transform: scale(0.98); }
+    .submit-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+    .submit-btn svg { width: 20px; height: 20px; }
+
+    .spinner {
+      width: 20px;
+      height: 20px;
+      border: 2.5px solid rgba(0,0,0,0.2);
+      border-top-color: #1a1a1a;
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+      display: none;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Back Link */
+    .back-link {
+      text-align: center;
+      margin-top: 20px;
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+    .back-link a {
+      color: var(--primary);
+      text-decoration: none;
+      font-weight: 600;
+      transition: color 0.2s;
+    }
+    .back-link a:hover { color: var(--accent); }
+
+    /* Footer */
+    .footer {
+      text-align: center;
+      margin-top: 24px;
+      font-size: 0.72rem;
+      color: var(--muted);
+      opacity: 0.6;
+    }
+
+    @media (max-width: 480px) {
+      .login-card { padding: 24px 20px; }
+      .logo-name { font-size: 1.5rem; }
+      .logo-icon { width: 52px; height: 52px; border-radius: 14px; }
+      .logo-icon svg { width: 26px; height: 26px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Background Pattern -->
+<div class="bg-pattern"></div>
+
+<!-- Toast -->
+<div class="toast error" id="toast">
+  <div class="toast-icon">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+  </div>
+  <div class="toast-content">
+    <h4 id="toastTitle">Error</h4>
+    <p id="toastMessage">Something went wrong.</p>
+  </div>
+</div>
+
+<!-- Container -->
+<div class="container">
+  
+  <!-- Logo -->
+  <div class="logo-section">
+    <div class="logo-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
+      </svg>
+    </div>
+    <span class="logo-name">Ev<span>onance</span></span>
+    <p class="logo-subtitle">Administrator Panel</p>
+    <span class="admin-badge">🔐 Secure Access</span>
+  </div>
+
+  <!-- Login Card -->
+  <div class="login-card">
+    <h2>Admin Login</h2>
+    <p class="subtitle">Enter your credentials to access the admin panel</p>
+
+    <!-- Security Indicator -->
+    <div class="security-indicator">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+      Encrypted Connection • Secure Login
+    </div>
+
+    <!-- Error Box -->
+    <div class="error-box" id="errorBox">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      <span id="errorMessage">Invalid credentials</span>
+    </div>
+
+    <!-- Email -->
+    <div class="form-group">
+      <div class="input-wrapper">
+        <span class="input-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="4" width="20" height="16" rx="2"/><path d="M22 7l-10 7L2 7"/>
+          </svg>
+        </span>
+        <input type="email" class="form-input" id="email" placeholder="Admin email address" autocomplete="email" />
+      </div>
+    </div>
+
+    <!-- Password -->
+    <div class="form-group">
+      <div class="input-wrapper">
+        <span class="input-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/>
+          </svg>
+        </span>
+        <input type="password" class="form-input" id="password" placeholder="Admin password" autocomplete="current-password" />
+        <button class="password-toggle" onclick="togglePassword()" type="button" tabindex="-1">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Remember Me -->
+    <label class="remember-row">
+      <input type="checkbox" id="rememberMe" />
+      Remember me for 7 days
+    </label>
+
+    <!-- Submit -->
+    <button class="submit-btn" id="loginBtn" onclick="handleAdminLogin()">
+      <div class="spinner" id="spinner"></div>
+      <span id="btnText">Sign In to Admin Panel</span>
+      <svg id="btnIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+      </svg>
+    </button>
+  </div>
+
+  <!-- Back Link -->
+  <div class="back-link">
+    <a href="index.html">← Back to Evonance</a>
+  </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    Evonance Admin Panel v1.0 • Authorized Personnel Only
+  </div>
+
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getAuth, signInWithEmailAndPassword, setPersistence, browserLocalPersistence, browserSessionPersistence, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+  import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyDT0ACobk5YMFgrqxb-VOnfELXTyssrOtA",
+    authDomain: "newpro-d830e.firebaseapp.com",
+    projectId: "newpro-d830e",
+    storageBucket: "newpro-d830e.firebasestorage.app",
+    messagingSenderId: "642315724384",
+    appId: "1:642315724384:web:19def936898718e9300505"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+
+  function showToast(type, title, message, duration = 4000) {
+    const toast = document.getElementById('toast');
+    toast.className = 'toast ' + type;
+    document.getElementById('toastTitle').textContent = title;
+    document.getElementById('toastMessage').textContent = message;
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), duration);
+  }
+
+  function showError(message) {
+    document.getElementById('errorMessage').textContent = message;
+    document.getElementById('errorBox').classList.add('show');
+  }
+
+  function hideError() {
+    document.getElementById('errorBox').classList.remove('show');
+  }
+
+  function setLoading(loading) {
+    const btn = document.getElementById('loginBtn');
+    const spinner = document.getElementById('spinner');
+    const btnText = document.getElementById('btnText');
+    const btnIcon = document.getElementById('btnIcon');
+    
+    btn.disabled = loading;
+    spinner.style.display = loading ? 'block' : 'none';
+    btnIcon.style.display = loading ? 'none' : 'block';
+    btnText.textContent = loading ? 'Authenticating...' : 'Sign In to Admin Panel';
+  }
+
+  // Toggle password visibility
+  window.togglePassword = function() {
+    const input = document.getElementById('password');
+    const btn = document.querySelector('.password-toggle');
+    
+    if (input.type === 'password') {
+      input.type = 'text';
+      btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>`;
+    } else {
+      input.type = 'password';
+      btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`;
+    }
+  };
+
+  // Handle admin login
+  window.handleAdminLogin = async function() {
+    const email = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value;
+    const rememberMe = document.getElementById('rememberMe').checked;
+
+    hideError();
+
+    if (!email) {
+      showError('Please enter your admin email address.');
+      document.getElementById('email').focus();
+      return;
+    }
+    if (!password) {
+      showError('Please enter your password.');
+      document.getElementById('password').focus();
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      // Set persistence
+      if (rememberMe) {
+        await setPersistence(auth, browserLocalPersistence);
+      } else {
+        await setPersistence(auth, browserSessionPersistence);
+      }
+
+      // Sign in
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+
+      // Check if user is admin
+      const adminDoc = await getDoc(doc(db, 'adminUsers', user.uid));
+      
+      if (adminDoc.exists() && adminDoc.data().role === 'admin') {
+        // Admin verified
+        showToast('success', 'Welcome Admin! 🛡️', 'Redirecting to admin dashboard...');
+        
+        setTimeout(() => {
+          window.location.href = 'admin-dashboard.html';
+        }, 1000);
+        
+      } else {
+        // Not an admin - sign out
+        await auth.signOut();
+        setLoading(false);
+        showError('Access denied. You are not authorized as an admin.');
+      }
+
+    } catch (error) {
+      setLoading(false);
+      console.error('Login error:', error);
+      
+      switch (error.code) {
+        case 'auth/invalid-email':
+          showError('Please enter a valid email address.');
+          break;
+        case 'auth/user-not-found':
+          showError('No account found with this email.');
+          break;
+        case 'auth/wrong-password':
+          showError('Incorrect password. Please try again.');
+          break;
+        case 'auth/invalid-credential':
+          showError('Invalid email or password. Please try again.');
+          break;
+        case 'auth/too-many-requests':
+          showError('Too many login attempts. Please wait and try again.');
+          break;
+        case 'auth/network-request-failed':
+          showError('Network error. Please check your connection.');
+          break;
+        default:
+          showError('Login failed. Please try again.');
+      }
+      
+      document.getElementById('password').value = '';
+    }
+  };
+
+  // Handle Enter key
+  document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('password').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') handleAdminLogin();
+    });
+    document.getElementById('email').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') document.getElementById('password').focus();
+    });
+  });
+
+  // Check if already logged in as admin
+  onAuthStateChanged(auth, async (user) => {
+    if (user) {
+      const adminDoc = await getDoc(doc(db, 'adminUsers', user.uid));
+      if (adminDoc.exists() && adminDoc.data().role === 'admin') {
+        window.location.href = 'admin-dashboard.html';
+      }
+    }
+  });
+</script>
+
+</body>
+</html>
