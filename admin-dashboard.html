@@ -1,0 +1,915 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
+  <title>Evonance – Admin Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0a0e17;
+      --card: #111827;
+      --card-hover: #1a2332;
+      --primary: #f59e0b;
+      --primary-dark: #d97706;
+      --primary-soft: rgba(245, 158, 11, 0.1);
+      --accent: #fbbf24;
+      --text: #f1f5f9;
+      --muted: #94a3b8;
+      --border: #1e293b;
+      --input-bg: #0f172a;
+      --success: #10b981;
+      --error: #ef4444;
+      --warning: #f59e0b;
+      --info: #3b82f6;
+      --purple: #8b5cf6;
+      --shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+      --glow: 0 0 40px rgba(245, 158, 11, 0.08);
+    }
+
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: var(--bg);
+      min-height: 100vh;
+      color: var(--text);
+      display: flex;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      width: 260px;
+      min-height: 100vh;
+      background: var(--card);
+      border-right: 1px solid var(--border);
+      padding: 20px 0;
+      position: fixed;
+      top: 0;
+      left: 0;
+      bottom: 0;
+      z-index: 100;
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+    }
+    .sidebar-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 0 20px 20px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 16px;
+    }
+    .sidebar-logo-icon {
+      width: 38px;
+      height: 38px;
+      background: linear-gradient(135deg, var(--primary), #fbbf24);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .sidebar-logo-icon svg { width: 20px; height: 20px; color: #1a1a1a; }
+    .sidebar-brand {
+      font-size: 1.1rem;
+      font-weight: 800;
+      color: var(--text);
+    }
+    .sidebar-brand span { color: var(--primary); }
+    .sidebar-nav { flex: 1; padding: 0 12px; }
+    .sidebar-link {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 16px;
+      border-radius: 12px;
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 0.85rem;
+      font-weight: 500;
+      transition: all 0.2s;
+      margin-bottom: 4px;
+    }
+    .sidebar-link:hover { background: var(--card-hover); color: var(--text); }
+    .sidebar-link.active {
+      background: var(--primary-soft);
+      color: var(--primary);
+      font-weight: 600;
+    }
+    .sidebar-link svg { width: 20px; height: 20px; flex-shrink: 0; }
+    .sidebar-link .badge {
+      margin-left: auto;
+      background: var(--error);
+      color: white;
+      font-size: 0.65rem;
+      padding: 2px 8px;
+      border-radius: 50px;
+      font-weight: 700;
+    }
+    .sidebar-link .badge.warn {
+      background: var(--warning);
+      color: #1a1a1a;
+    }
+    .sidebar-footer {
+      padding: 16px 20px 0;
+      border-top: 1px solid var(--border);
+      margin-top: auto;
+    }
+    .sidebar-user {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    .sidebar-avatar {
+      width: 36px;
+      height: 36px;
+      background: var(--primary);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 0.85rem;
+      color: #1a1a1a;
+    }
+    .sidebar-user-info { flex: 1; min-width: 0; }
+    .sidebar-user-name { font-size: 0.8rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .sidebar-user-role { font-size: 0.68rem; color: var(--primary); }
+    .sidebar-logout {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 14px;
+      border-radius: 10px;
+      color: #fca5a5;
+      cursor: pointer;
+      font-size: 0.82rem;
+      font-weight: 500;
+      transition: all 0.2s;
+      background: none;
+      border: none;
+      width: 100%;
+      font-family: inherit;
+    }
+    .sidebar-logout:hover { background: rgba(239, 68, 68, 0.1); }
+    .sidebar-logout svg { width: 18px; height: 18px; }
+
+    /* Main Content */
+    .main-content {
+      flex: 1;
+      margin-left: 260px;
+      padding: 24px;
+      min-height: 100vh;
+    }
+    .page-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .page-title { font-size: 1.5rem; font-weight: 800; letter-spacing: -0.5px; }
+    .page-subtitle { font-size: 0.85rem; color: var(--muted); margin-top: 2px; }
+    .header-actions { display: flex; gap: 10px; align-items: center; }
+    .refresh-btn {
+      background: var(--card);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 8px 16px;
+      border-radius: 50px;
+      font-family: inherit;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .refresh-btn:hover { background: var(--card-hover); }
+    .refresh-btn svg { width: 16px; height: 16px; }
+    .last-updated { font-size: 0.72rem; color: var(--muted); }
+
+    /* Stats Grid */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+      margin-bottom: 24px;
+    }
+    .stat-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      transition: all 0.3s;
+      position: relative;
+      overflow: hidden;
+    }
+    .stat-card:hover { border-color: var(--primary); box-shadow: var(--glow); }
+    .stat-card::before {
+      content: '';
+      position: absolute;
+      top: -20px;
+      right: -20px;
+      width: 70px;
+      height: 70px;
+      border-radius: 50%;
+      opacity: 0.06;
+    }
+    .stat-card.users::before { background: #3b82f6; }
+    .stat-card.deposits::before { background: #10b981; }
+    .stat-card.withdrawals::before { background: #f59e0b; }
+    .stat-card.investments::before { background: #8b5cf6; }
+    .stat-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+      margin-bottom: 12px;
+    }
+    .stat-icon.users { background: rgba(59, 130, 246, 0.15); }
+    .stat-icon.deposits { background: rgba(16, 185, 129, 0.15); }
+    .stat-icon.withdrawals { background: rgba(245, 158, 11, 0.15); }
+    .stat-icon.investments { background: rgba(139, 92, 246, 0.15); }
+    .stat-value {
+      font-size: 1.8rem;
+      font-weight: 800;
+      color: var(--text);
+      margin-bottom: 2px;
+    }
+    .stat-label {
+      font-size: 0.72rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .stat-change {
+      font-size: 0.7rem;
+      margin-top: 4px;
+      font-weight: 600;
+    }
+    .stat-change.up { color: var(--success); }
+    .stat-change.down { color: var(--error); }
+
+    /* Row Grid */
+    .row-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin-bottom: 24px;
+    }
+
+    /* Section Card */
+    .section-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+    }
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+    .section-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .section-title svg { width: 18px; height: 18px; color: var(--primary); }
+    .view-all {
+      font-size: 0.75rem;
+      color: var(--primary);
+      text-decoration: none;
+      font-weight: 600;
+    }
+    .view-all:hover { color: var(--accent); }
+
+    /* Pending List */
+    .pending-list { display: flex; flex-direction: column; gap: 8px; }
+    .pending-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 14px;
+      background: var(--input-bg);
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      transition: all 0.2s;
+    }
+    .pending-item:hover { border-color: var(--primary); }
+    .pending-user { display: flex; align-items: center; gap: 10px; }
+    .pending-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: var(--primary-soft);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 0.8rem;
+      color: var(--primary);
+    }
+    .pending-info h4 { font-size: 0.82rem; font-weight: 600; }
+    .pending-info p { font-size: 0.7rem; color: var(--muted); margin-top: 2px; }
+    .pending-amount { font-size: 0.85rem; font-weight: 700; color: var(--text); }
+    .pending-badge {
+      font-size: 0.62rem;
+      font-weight: 700;
+      padding: 4px 8px;
+      border-radius: 50px;
+      text-transform: uppercase;
+    }
+    .pending-badge.pending { background: rgba(245, 158, 11, 0.15); color: var(--warning); }
+
+    /* Quick Actions */
+    .quick-actions-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+    }
+    .quick-action-btn {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s;
+      text-decoration: none;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      font-family: inherit;
+      color: var(--text);
+    }
+    .quick-action-btn:hover { border-color: var(--primary); box-shadow: var(--glow); transform: translateY(-2px); }
+    .quick-action-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.3rem;
+    }
+    .quick-action-icon.approve { background: rgba(16, 185, 129, 0.15); }
+    .quick-action-icon.users { background: rgba(59, 130, 246, 0.15); }
+    .quick-action-icon.notify { background: rgba(139, 92, 246, 0.15); }
+    .quick-action-icon.settings { background: rgba(245, 158, 11, 0.15); }
+    .quick-action-label { font-size: 0.72rem; font-weight: 600; }
+
+    /* No Data */
+    .no-data {
+      text-align: center;
+      padding: 24px;
+      color: var(--muted);
+      font-size: 0.82rem;
+    }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      z-index: 1000;
+      transform: translateX(120%);
+      transition: transform 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+      max-width: 380px;
+    }
+    .toast.show { transform: translateX(0); }
+    .toast.success { border-left: 4px solid var(--success); }
+    .toast-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .toast.success .toast-icon { background: rgba(16, 185, 129, 0.15); }
+    .toast-icon svg { width: 20px; height: 20px; color: var(--success); }
+    .toast-content h4 { font-size: 0.9rem; font-weight: 700; }
+    .toast-content p { font-size: 0.75rem; color: var(--muted); }
+
+    /* Mobile menu */
+    .mobile-menu-btn {
+      display: none;
+      background: none;
+      border: none;
+      color: var(--text);
+      cursor: pointer;
+      padding: 8px;
+    }
+    .mobile-menu-btn svg { width: 28px; height: 28px; }
+
+    @media (max-width: 1024px) {
+      .stats-grid { grid-template-columns: repeat(2, 1fr); }
+      .row-grid { grid-template-columns: 1fr; }
+      .quick-actions-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 768px) {
+      .sidebar { transform: translateX(-100%); transition: transform 0.3s; }
+      .sidebar.open { transform: translateX(0); }
+      .main-content { margin-left: 0; }
+      .mobile-menu-btn { display: block; }
+      .stats-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+      .page-title { font-size: 1.2rem; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-logo">
+    <div class="sidebar-logo-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
+      </svg>
+    </div>
+    <span class="sidebar-brand">Ev<span>onance</span></span>
+  </div>
+  
+  <nav class="sidebar-nav">
+    <a href="admin-dashboard.html" class="sidebar-link active">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      Dashboard
+    </a>
+    <a href="admin-users.html" class="sidebar-link">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+      Users
+    </a>
+    <a href="admin-deposits.html" class="sidebar-link">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+      Deposits
+      <span class="badge" id="pendingDepositsBadge">0</span>
+    </a>
+    <a href="admin-withdrawals.html" class="sidebar-link">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="12" y1="10" x2="12" y2="18"/><polyline points="9 15 12 18 15 15"/></svg>
+      Withdrawals
+      <span class="badge warn" id="pendingWithdrawalsBadge">0</span>
+    </a>
+    <a href="admin-investments.html" class="sidebar-link">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      Investments
+    </a>
+    <a href="admin-notifications.html" class="sidebar-link">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+      Notifications
+    </a>
+    <a href="admin-settings.html" class="sidebar-link">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+      Settings
+    </a>
+  </nav>
+  
+  <div class="sidebar-footer">
+    <div class="sidebar-user">
+      <div class="sidebar-avatar" id="sidebarAvatar">A</div>
+      <div class="sidebar-user-info">
+        <div class="sidebar-user-name" id="sidebarEmail">admin@evonance.com</div>
+        <div class="sidebar-user-role">Administrator</div>
+      </div>
+    </div>
+    <button class="sidebar-logout" onclick="handleLogout()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      Logout
+    </button>
+  </div>
+</aside>
+
+<!-- Main Content -->
+<main class="main-content">
+  
+  <!-- Header -->
+  <div class="page-header">
+    <div>
+      <button class="mobile-menu-btn" onclick="toggleSidebar()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+      <h1 class="page-title">Admin Dashboard</h1>
+      <p class="page-subtitle">Overview of your platform</p>
+    </div>
+    <div class="header-actions">
+      <span class="last-updated" id="lastUpdated">Just now</span>
+      <button class="refresh-btn" onclick="refreshData()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg>
+        Refresh
+      </button>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-grid">
+    <div class="stat-card users">
+      <div class="stat-icon users">👥</div>
+      <div class="stat-value" id="totalUsers">0</div>
+      <div class="stat-label">Total Users</div>
+      <div class="stat-change up" id="todayUsers">+0 today</div>
+    </div>
+    <div class="stat-card deposits">
+      <div class="stat-icon deposits">💰</div>
+      <div class="stat-value" id="totalDeposits">₦0</div>
+      <div class="stat-label">Total Deposits</div>
+      <div class="stat-change up" id="pendingDeposits">0 pending</div>
+    </div>
+    <div class="stat-card withdrawals">
+      <div class="stat-icon withdrawals">💸</div>
+      <div class="stat-value" id="totalWithdrawals">₦0</div>
+      <div class="stat-label">Total Withdrawals</div>
+      <div class="stat-change up" id="pendingWithdrawals">0 pending</div>
+    </div>
+    <div class="stat-card investments">
+      <div class="stat-icon investments">📈</div>
+      <div class="stat-value" id="activeInvestments">0</div>
+      <div class="stat-label">Active Investments</div>
+      <div class="stat-change up" id="totalInvested">₦0 invested</div>
+    </div>
+  </div>
+
+  <!-- Quick Actions -->
+  <div class="section-card" style="margin-bottom: 24px;">
+    <div class="section-title" style="margin-bottom: 16px;">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+      Quick Actions
+    </div>
+    <div class="quick-actions-grid">
+      <a href="admin-deposits.html" class="quick-action-btn">
+        <div class="quick-action-icon approve">✅</div>
+        <span class="quick-action-label">Approve Deposits</span>
+      </a>
+      <a href="admin-withdrawals.html" class="quick-action-btn">
+        <div class="quick-action-icon approve">💸</div>
+        <span class="quick-action-label">Process Withdrawals</span>
+      </a>
+      <a href="admin-users.html" class="quick-action-btn">
+        <div class="quick-action-icon users">👥</div>
+        <span class="quick-action-label">Manage Users</span>
+      </a>
+      <a href="admin-notifications.html" class="quick-action-btn">
+        <div class="quick-action-icon notify">🔔</div>
+        <span class="quick-action-label">Send Notification</span>
+      </a>
+    </div>
+  </div>
+
+  <!-- Pending Deposits & Withdrawals -->
+  <div class="row-grid">
+    <!-- Pending Deposits -->
+    <div class="section-card">
+      <div class="section-header">
+        <span class="section-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+          Pending Deposits
+        </span>
+        <a href="admin-deposits.html" class="view-all">View All →</a>
+      </div>
+      <div class="pending-list" id="pendingDepositsList">
+        <div class="no-data">No pending deposits</div>
+      </div>
+    </div>
+
+    <!-- Pending Withdrawals -->
+    <div class="section-card">
+      <div class="section-header">
+        <span class="section-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="12" y1="10" x2="12" y2="18"/><polyline points="9 15 12 18 15 15"/></svg>
+          Pending Withdrawals
+        </span>
+        <a href="admin-withdrawals.html" class="view-all">View All →</a>
+      </div>
+      <div class="pending-list" id="pendingWithdrawalsList">
+        <div class="no-data">No pending withdrawals</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recent Users -->
+  <div class="section-card">
+    <div class="section-header">
+      <span class="section-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+        Recent Registrations
+      </span>
+      <a href="admin-users.html" class="view-all">View All →</a>
+    </div>
+    <div class="pending-list" id="recentUsersList">
+      <div class="no-data">No users yet</div>
+    </div>
+  </div>
+
+</main>
+
+<!-- Toast -->
+<div class="toast success" id="toast">
+  <div class="toast-icon">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+  </div>
+  <div class="toast-content">
+    <h4 id="toastTitle">Success</h4>
+    <p id="toastMessage">Action completed.</p>
+  </div>
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+  import { getFirestore, doc, getDoc, collection, query, where, orderBy, getDocs, getCountFromServer, limit as fbLimit } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyDT0ACobk5YMFgrqxb-VOnfELXTyssrOtA",
+    authDomain: "newpro-d830e.firebaseapp.com",
+    projectId: "newpro-d830e",
+    storageBucket: "newpro-d830e.firebasestorage.app",
+    messagingSenderId: "642315724384",
+    appId: "1:642315724384:web:19def936898718e9300505"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+
+  let currentAdmin = null;
+
+  function showToast(type, title, message, duration = 3000) {
+    const toast = document.getElementById('toast');
+    toast.className = 'toast ' + type;
+    document.getElementById('toastTitle').textContent = title;
+    document.getElementById('toastMessage').textContent = message;
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), duration);
+  }
+
+  function formatNaira(amount) {
+    if (amount >= 1000000) return '₦' + (amount / 1000000).toFixed(1) + 'M';
+    if (amount >= 1000) return '₦' + (amount / 1000).toFixed(0) + 'K';
+    return '₦' + Number(amount).toLocaleString('en-NG');
+  }
+
+  function formatNairaFull(amount) {
+    return '₦' + Number(amount).toLocaleString('en-NG', { minimumFractionDigits: 2 });
+  }
+
+  function formatDate(timestamp) {
+    if (!timestamp) return '';
+    const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+    const now = new Date();
+    const diff = now - date;
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    if (days === 0) return 'Today';
+    if (days === 1) return 'Yesterday';
+    if (days < 7) return days + 'd ago';
+    return date.toLocaleDateString('en-NG', { month: 'short', day: 'numeric' });
+  }
+
+  function maskEmail(email) {
+    if (!email) return 'Unknown';
+    const parts = email.split('@');
+    if (parts.length < 2) return email;
+    return parts[0].substring(0, 4) + '***@' + parts[1];
+  }
+
+  // Toggle sidebar for mobile
+  window.toggleSidebar = function() {
+    document.getElementById('sidebar').classList.toggle('open');
+  };
+
+  // Logout
+  window.handleLogout = async function() {
+    try {
+      await signOut(auth);
+      window.location.href = 'admin-login.html';
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
+  };
+
+  // Refresh data
+  window.refreshData = function() {
+    if (currentAdmin) loadDashboardData();
+  };
+
+  // Load dashboard data
+  async function loadDashboardData() {
+    try {
+      // Total users
+      const usersSnapshot = await getCountFromServer(collection(db, 'users'));
+      const totalUsers = usersSnapshot.data().count;
+      document.getElementById('totalUsers').textContent = totalUsers;
+
+      // Today's users
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const todayQuery = query(collection(db, 'users'), where('createdAt', '>=', today));
+      const todaySnapshot = await getCountFromServer(todayQuery);
+      document.getElementById('todayUsers').textContent = '+' + todaySnapshot.data().count + ' today';
+
+      // Get all users for stats calculation
+      const allUsersQuery = query(collection(db, 'users'));
+      const allUsersSnapshot = await getDocs(allUsersQuery);
+      
+      let totalDepositsSum = 0;
+      let totalWithdrawalsSum = 0;
+      let totalInvestedSum = 0;
+      let activeInvestmentsCount = 0;
+      
+      allUsersSnapshot.forEach(doc => {
+        const data = doc.data();
+        totalDepositsSum += data.totalDeposits || 0;
+        totalWithdrawalsSum += data.totalWithdrawals || 0;
+        activeInvestmentsCount += data.activeInvestments || 0;
+      });
+
+      document.getElementById('totalDeposits').textContent = formatNaira(totalDepositsSum);
+      document.getElementById('totalWithdrawals').textContent = formatNaira(totalWithdrawalsSum);
+      document.getElementById('activeInvestments').textContent = activeInvestmentsCount;
+
+      // Total invested
+      const invQuery = query(collection(db, 'investments'));
+      const invSnapshot = await getDocs(invQuery);
+      invSnapshot.forEach(doc => {
+        totalInvestedSum += doc.data().amount || 0;
+      });
+      document.getElementById('totalInvested').textContent = formatNaira(totalInvestedSum) + ' invested';
+
+      // Pending deposits
+      const pendingDepQuery = query(collection(db, 'deposits'), where('status', '==', 'pending'));
+      const pendingDepSnapshot = await getCountFromServer(pendingDepQuery);
+      const pendingDepCount = pendingDepSnapshot.data().count;
+      document.getElementById('pendingDeposits').textContent = pendingDepCount + ' pending';
+      document.getElementById('pendingDepositsBadge').textContent = pendingDepCount;
+      if (pendingDepCount === 0) document.getElementById('pendingDepositsBadge').style.display = 'none';
+
+      // Pending withdrawals
+      const pendingWithQuery = query(collection(db, 'withdrawals'), where('status', '==', 'pending'));
+      const pendingWithSnapshot = await getCountFromServer(pendingWithQuery);
+      const pendingWithCount = pendingWithSnapshot.data().count;
+      document.getElementById('pendingWithdrawals').textContent = pendingWithCount + ' pending';
+      document.getElementById('pendingWithdrawalsBadge').textContent = pendingWithCount;
+      if (pendingWithCount === 0) document.getElementById('pendingWithdrawalsBadge').style.display = 'none';
+
+      // Load pending deposits list
+      loadPendingDeposits();
+      
+      // Load pending withdrawals list
+      loadPendingWithdrawals();
+      
+      // Load recent users
+      loadRecentUsers();
+
+      // Update timestamp
+      document.getElementById('lastUpdated').textContent = 'Just now';
+
+    } catch (error) {
+      console.error('Error loading dashboard:', error);
+      showToast('error', 'Error', 'Failed to load dashboard data.');
+    }
+  }
+
+  // Load pending deposits
+  async function loadPendingDeposits() {
+    const list = document.getElementById('pendingDepositsList');
+    try {
+      const q = query(collection(db, 'deposits'), where('status', '==', 'pending'), orderBy('createdAt', 'desc'), fbLimit(5));
+      const snapshot = await getDocs(q);
+      
+      if (snapshot.empty) {
+        list.innerHTML = '<div class="no-data">No pending deposits</div>';
+        return;
+      }
+      
+      list.innerHTML = '';
+      snapshot.forEach(doc => {
+        const dep = doc.data();
+        list.innerHTML += `
+          <div class="pending-item">
+            <div class="pending-user">
+              <div class="pending-avatar">${(dep.fullName || dep.email || 'U').charAt(0).toUpperCase()}</div>
+              <div class="pending-info">
+                <h4>${dep.fullName || maskEmail(dep.email || '')}</h4>
+                <p>${formatDate(dep.createdAt)}</p>
+              </div>
+            </div>
+            <div style="text-align:right;">
+              <div class="pending-amount">${formatNairaFull(dep.amount)}</div>
+              <span class="pending-badge pending">Pending</span>
+            </div>
+          </div>`;
+      });
+    } catch (error) {
+      console.error('Error loading pending deposits:', error);
+    }
+  }
+
+  // Load pending withdrawals
+  async function loadPendingWithdrawals() {
+    const list = document.getElementById('pendingWithdrawalsList');
+    try {
+      const q = query(collection(db, 'withdrawals'), where('status', '==', 'pending'), orderBy('createdAt', 'desc'), fbLimit(5));
+      const snapshot = await getDocs(q);
+      
+      if (snapshot.empty) {
+        list.innerHTML = '<div class="no-data">No pending withdrawals</div>';
+        return;
+      }
+      
+      list.innerHTML = '';
+      snapshot.forEach(doc => {
+        const wit = doc.data();
+        list.innerHTML += `
+          <div class="pending-item">
+            <div class="pending-user">
+              <div class="pending-avatar">${(wit.accountName || wit.email || 'U').charAt(0).toUpperCase()}</div>
+              <div class="pending-info">
+                <h4>${wit.accountName || maskEmail(wit.email || '')}</h4>
+                <p>${formatDate(wit.createdAt)} • ${wit.bankName || ''}</p>
+              </div>
+            </div>
+            <div style="text-align:right;">
+              <div class="pending-amount">${formatNairaFull(wit.netAmount || wit.amount)}</div>
+              <span class="pending-badge pending">Pending</span>
+            </div>
+          </div>`;
+      });
+    } catch (error) {
+      console.error('Error loading pending withdrawals:', error);
+    }
+  }
+
+  // Load recent users
+  async function loadRecentUsers() {
+    const list = document.getElementById('recentUsersList');
+    try {
+      const q = query(collection(db, 'users'), orderBy('createdAt', 'desc'), fbLimit(5));
+      const snapshot = await getDocs(q);
+      
+      if (snapshot.empty) {
+        list.innerHTML = '<div class="no-data">No users yet</div>';
+        return;
+      }
+      
+      list.innerHTML = '';
+      snapshot.forEach(doc => {
+        const user = doc.data();
+        list.innerHTML += `
+          <div class="pending-item">
+            <div class="pending-user">
+              <div class="pending-avatar">${(user.email || 'U').charAt(0).toUpperCase()}</div>
+              <div class="pending-info">
+                <h4>${maskEmail(user.email || '')}</h4>
+                <p>Joined: ${formatDate(user.createdAt)} • Ref: ${user.referralCode || 'N/A'}</p>
+              </div>
+            </div>
+            <div style="text-align:right;">
+              <div class="pending-amount">${formatNairaFull(user.depositWallet + user.withdrawalWallet || 0)}</div>
+              <span style="font-size:0.7rem;color:var(--muted);">Balance</span>
+            </div>
+          </div>`;
+      });
+    } catch (error) {
+      console.error('Error loading recent users:', error);
+    }
+  }
+
+  // Auth check
+  onAuthStateChanged(auth, async (user) => {
+    if (user) {
+      const adminDoc = await getDoc(doc(db, 'adminUsers', user.uid));
+      if (adminDoc.exists() && adminDoc.data().role === 'admin') {
+        currentAdmin = user;
+        document.getElementById('sidebarEmail').textContent = user.email || 'Admin';
+        document.getElementById('sidebarAvatar').textContent = (user.email || 'A').charAt(0).toUpperCase();
+        loadDashboardData();
+      } else {
+        window.location.href = 'admin-login.html';
+      }
+    } else {
+      window.location.href = 'admin-login.html';
+    }
+  });
+</script>
+
+</body>
+</html>
