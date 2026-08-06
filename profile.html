@@ -1,0 +1,1029 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
+  <title>Evonance – Profile</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0f172a;
+      --card: #1e293b;
+      --card-hover: #334155;
+      --primary: #10b981;
+      --primary-dark: #059669;
+      --primary-soft: rgba(16, 185, 129, 0.1);
+      --accent: #34d399;
+      --text: #f1f5f9;
+      --muted: #94a3b8;
+      --border: #334155;
+      --input-bg: #0f172a;
+      --success: #10b981;
+      --error: #ef4444;
+      --warning: #f59e0b;
+      --info: #3b82f6;
+      --purple: #8b5cf6;
+      --shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+      --glow: 0 0 40px rgba(16, 185, 129, 0.1);
+    }
+
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: var(--bg);
+      min-height: 100vh;
+      color: var(--text);
+      padding-bottom: 80px;
+      background-image: 
+        radial-gradient(ellipse at 0% 0%, rgba(16, 185, 129, 0.03) 0%, transparent 50%),
+        radial-gradient(ellipse at 100% 100%, rgba(52, 211, 153, 0.02) 0%, transparent 50%);
+    }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      z-index: 1000;
+      transform: translateX(-120%);
+      transition: transform 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+      max-width: 400px;
+    }
+    .toast.show { transform: translateX(0); }
+    .toast.success { border-left: 4px solid var(--success); }
+    .toast.error { border-left: 4px solid var(--error); }
+    .toast.info { border-left: 4px solid var(--info); }
+    .toast-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .toast.success .toast-icon { background: rgba(16, 185, 129, 0.15); }
+    .toast.error .toast-icon { background: rgba(239, 68, 68, 0.15); }
+    .toast.info .toast-icon { background: rgba(59, 130, 246, 0.15); }
+    .toast-icon svg { width: 24px; height: 24px; }
+    .toast.success .toast-icon svg { color: var(--success); }
+    .toast.error .toast-icon svg { color: var(--error); }
+    .toast.info .toast-icon svg { color: var(--info); }
+    .toast-content h4 { font-size: 0.95rem; font-weight: 700; color: var(--text); margin-bottom: 2px; }
+    .toast-content p { font-size: 0.8rem; color: var(--muted); line-height: 1.3; }
+
+    /* Header */
+    .header {
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+      padding: 16px 20px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .header-content {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    .header-left { display: flex; align-items: center; gap: 12px; }
+    .back-btn {
+      background: none;
+      border: none;
+      color: var(--muted);
+      cursor: pointer;
+      padding: 8px;
+      border-radius: 10px;
+      display: flex;
+      transition: all 0.2s;
+      text-decoration: none;
+    }
+    .back-btn:hover { background: var(--card-hover); color: var(--text); }
+    .back-btn svg { width: 24px; height: 24px; }
+    .header-title { font-size: 1.2rem; font-weight: 800; }
+
+    /* Main Content */
+    .main-content {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    /* Profile Header Card */
+    .profile-header-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 24px;
+      text-align: center;
+    }
+    .profile-avatar {
+      width: 80px;
+      height: 80px;
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2rem;
+      font-weight: 800;
+      color: white;
+      margin: 0 auto 12px;
+      box-shadow: 0 8px 24px rgba(16, 185, 129, 0.3);
+    }
+    .profile-email {
+      font-size: 0.9rem;
+      color: var(--muted);
+      margin-bottom: 4px;
+      word-break: break-all;
+    }
+    .profile-joined {
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+    .profile-referral {
+      display: inline-block;
+      background: rgba(139, 92, 246, 0.15);
+      border: 1px solid rgba(139, 92, 246, 0.3);
+      border-radius: 50px;
+      padding: 4px 12px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: #a78bfa;
+      margin-top: 8px;
+    }
+
+    /* Section Card */
+    .section-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 20px;
+    }
+    .section-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .section-title svg { width: 20px; height: 20px; color: var(--primary); }
+
+    /* Info Row */
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .info-row:last-child { border-bottom: none; }
+    .info-label { font-size: 0.82rem; color: var(--muted); display: flex; align-items: center; gap: 6px; }
+    .info-value { font-size: 0.85rem; font-weight: 600; }
+    .edit-btn {
+      background: var(--primary-soft);
+      border: 1px solid var(--primary);
+      color: var(--primary);
+      padding: 6px 12px;
+      border-radius: 50px;
+      font-family: inherit;
+      font-size: 0.72rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .edit-btn:hover { background: var(--primary); color: white; }
+
+    /* Edit Input */
+    .edit-input {
+      height: 40px;
+      background: var(--input-bg);
+      border: 2px solid var(--border);
+      border-radius: 10px;
+      padding: 0 12px;
+      font-family: inherit;
+      font-size: 0.85rem;
+      color: var(--text);
+      outline: none;
+      width: 180px;
+      transition: all 0.3s;
+    }
+    .edit-input:focus { border-color: var(--primary); }
+
+    /* Action Buttons */
+    .action-btn {
+      width: 100%;
+      padding: 14px;
+      border-radius: 14px;
+      font-family: inherit;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+    .action-btn:last-child { margin-bottom: 0; }
+    .action-btn.password {
+      background: var(--info);
+      color: white;
+    }
+    .action-btn.password:hover { background: #2563eb; }
+    .action-btn.pin {
+      background: var(--purple);
+      color: white;
+    }
+    .action-btn.pin:hover { background: #7c3aed; }
+    .action-btn.logout {
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      color: #fca5a5;
+    }
+    .action-btn.logout:hover { background: rgba(239, 68, 68, 0.2); }
+    .action-btn.delete {
+      background: transparent;
+      border: 1px solid rgba(239, 68, 68, 0.2);
+      color: #f87171;
+    }
+    .action-btn.delete:hover { background: rgba(239, 68, 68, 0.1); }
+    .action-btn svg { width: 18px; height: 18px; }
+
+    /* Modal */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(4px);
+      z-index: 200;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .modal-overlay.show { display: flex; }
+    .modal {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 28px;
+      max-width: 400px;
+      width: 100%;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+      animation: modalIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    @keyframes modalIn {
+      from { opacity: 0; transform: scale(0.9) translateY(20px); }
+      to { opacity: 1; transform: scale(1) translateY(0); }
+    }
+    .modal h3 { font-size: 1.1rem; font-weight: 700; margin-bottom: 20px; text-align: center; }
+    .form-group { margin-bottom: 14px; }
+    .form-label { display: block; font-size: 0.78rem; font-weight: 600; color: var(--muted); margin-bottom: 6px; }
+    .form-input {
+      width: 100%;
+      height: 48px;
+      background: var(--input-bg);
+      border: 2px solid var(--border);
+      border-radius: 12px;
+      padding: 0 14px;
+      font-family: inherit;
+      font-size: 0.9rem;
+      color: var(--text);
+      outline: none;
+      transition: all 0.3s;
+    }
+    .form-input:focus { border-color: var(--primary); }
+    .pin-inputs { display: flex; gap: 10px; justify-content: center; }
+    .pin-input {
+      width: 50px;
+      height: 55px;
+      background: var(--input-bg);
+      border: 2px solid var(--border);
+      border-radius: 12px;
+      text-align: center;
+      font-family: inherit;
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: var(--text);
+      outline: none;
+    }
+    .pin-input:focus { border-color: var(--primary); }
+    .modal-buttons { display: flex; gap: 10px; margin-top: 20px; }
+    .modal-btn {
+      flex: 1;
+      padding: 12px;
+      border-radius: 50px;
+      font-family: inherit;
+      font-size: 0.9rem;
+      font-weight: 700;
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s;
+    }
+    .modal-btn.cancel { background: var(--input-bg); color: var(--text); border: 1px solid var(--border); }
+    .modal-btn.cancel:hover { background: var(--card-hover); }
+    .modal-btn.confirm { background: var(--primary); color: white; }
+    .modal-btn.confirm:hover { background: var(--primary-dark); }
+    .modal-btn.danger { background: var(--error); color: white; }
+    .modal-btn.danger:hover { background: #dc2626; }
+    .error-message { font-size: 0.72rem; color: var(--error); margin-top: 4px; display: none; }
+    .error-message.show { display: block; }
+
+    /* Earnings Chart */
+    .chart-container {
+      position: relative;
+      height: 220px;
+      margin-top: 8px;
+    }
+    .chart-bars {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-around;
+      height: 180px;
+      gap: 8px;
+      padding: 0 4px;
+    }
+    .chart-bar-wrapper {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+    }
+    .chart-bar {
+      width: 100%;
+      max-width: 50px;
+      background: linear-gradient(180deg, var(--primary), var(--primary-dark));
+      border-radius: 8px 8px 0 0;
+      min-height: 8px;
+      transition: height 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+      position: relative;
+    }
+    .chart-bar:hover { opacity: 0.8; }
+    .chart-bar.referral { background: linear-gradient(180deg, #8b5cf6, #7c3aed); }
+    .chart-bar.investment { background: linear-gradient(180deg, #f59e0b, #d97706); }
+    .chart-bar.deposit { background: linear-gradient(180deg, #3b82f6, #2563eb); }
+    .chart-bar.withdrawal { background: linear-gradient(180deg, #ef4444, #dc2626); }
+    .chart-value {
+      font-size: 0.6rem;
+      font-weight: 700;
+      color: var(--text);
+      position: absolute;
+      top: -16px;
+      left: 50%;
+      transform: translateX(-50%);
+      white-space: nowrap;
+    }
+    .chart-label {
+      font-size: 0.62rem;
+      color: var(--muted);
+      text-align: center;
+      margin-top: 4px;
+    }
+    .chart-legend {
+      display: flex;
+      justify-content: center;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-top: 16px;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.68rem;
+      color: var(--muted);
+    }
+    .legend-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 3px;
+    }
+    .legend-dot.deposit { background: #3b82f6; }
+    .legend-dot.withdrawal { background: #ef4444; }
+    .legend-dot.referral { background: #8b5cf6; }
+    .legend-dot.investment { background: #f59e0b; }
+
+    /* Bottom Navigation */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: var(--card);
+      border-top: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      padding: 8px 0 12px;
+      z-index: 100;
+    }
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      text-decoration: none;
+      color: var(--muted);
+      font-size: 0.68rem;
+      font-weight: 600;
+      padding: 4px 12px;
+      border-radius: 12px;
+    }
+    .nav-item.active { color: var(--primary); }
+    .nav-item svg { width: 24px; height: 24px; }
+    .nav-item:hover { color: var(--text); }
+
+    @media (max-width: 480px) {
+      .main-content { padding: 16px; gap: 16px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Toast -->
+<div class="toast success" id="toast">
+  <div class="toast-icon">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+  </div>
+  <div class="toast-content">
+    <h4 id="toastTitle">Success</h4>
+    <p id="toastMessage">Action completed.</p>
+  </div>
+</div>
+
+<!-- Header -->
+<header class="header">
+  <div class="header-content">
+    <div class="header-left">
+      <a href="dashboard.html" class="back-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+      </a>
+      <span class="header-title">My Profile</span>
+    </div>
+  </div>
+</header>
+
+<!-- Main Content -->
+<main class="main-content">
+
+  <!-- Profile Header -->
+  <div class="profile-header-card">
+    <div class="profile-avatar" id="profileAvatar">E</div>
+    <div class="profile-email" id="profileEmail">Loading...</div>
+    <div class="profile-joined" id="profileJoined">Joined: --</div>
+    <span class="profile-referral" id="profileReferral">Ref: --------</span>
+  </div>
+
+  <!-- Personal Information -->
+  <div class="section-card">
+    <div class="section-title">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      Personal Information
+    </div>
+    
+    <div class="info-row">
+      <span class="info-label">📧 Email</span>
+      <span class="info-value" id="displayEmail" style="color: var(--muted);">--</span>
+      <span style="font-size:0.65rem;color:var(--muted);">🔒</span>
+    </div>
+    
+    <div class="info-row">
+      <span class="info-label">📱 Phone</span>
+      <span class="info-value" id="displayPhone">--</span>
+      <button class="edit-btn" onclick="openEditModal('phone')">Edit</button>
+    </div>
+    
+    <div class="info-row">
+      <span class="info-label">👤 Name</span>
+      <span class="info-value" id="displayName">--</span>
+      <button class="edit-btn" onclick="openEditModal('name')">Edit</button>
+    </div>
+  </div>
+
+  <!-- Earnings Chart -->
+  <div class="section-card">
+    <div class="section-title">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      Earnings Overview
+    </div>
+    <div class="chart-container">
+      <div class="chart-bars" id="chartBars">
+        <div class="chart-bar-wrapper">
+          <div class="chart-bar deposit" id="barDeposit" style="height: 20px;"><span class="chart-value">₦0</span></div>
+          <span class="chart-label">Deposits</span>
+        </div>
+        <div class="chart-bar-wrapper">
+          <div class="chart-bar withdrawal" id="barWithdrawal" style="height: 20px;"><span class="chart-value">₦0</span></div>
+          <span class="chart-label">Withdrawals</span>
+        </div>
+        <div class="chart-bar-wrapper">
+          <div class="chart-bar referral" id="barReferral" style="height: 20px;"><span class="chart-value">₦0</span></div>
+          <span class="chart-label">Referrals</span>
+        </div>
+        <div class="chart-bar-wrapper">
+          <div class="chart-bar investment" id="barInvestment" style="height: 20px;"><span class="chart-value">₦0</span></div>
+          <span class="chart-label">Investments</span>
+        </div>
+      </div>
+    </div>
+    <div class="chart-legend">
+      <div class="legend-item"><div class="legend-dot deposit"></div> Deposits</div>
+      <div class="legend-item"><div class="legend-dot withdrawal"></div> Withdrawals</div>
+      <div class="legend-item"><div class="legend-dot referral"></div> Referrals</div>
+      <div class="legend-item"><div class="legend-dot investment"></div> Investments</div>
+    </div>
+  </div>
+
+  <!-- Security -->
+  <div class="section-card">
+    <div class="section-title">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+      Security
+    </div>
+    
+    <button class="action-btn password" onclick="openPasswordModal()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+      Change Password
+    </button>
+    
+    <button class="action-btn pin" onclick="openPinModal()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+      Change Withdrawal PIN
+    </button>
+  </div>
+
+  <!-- Account Actions -->
+  <div class="section-card">
+    <div class="section-title">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      Account Actions
+    </div>
+    
+    <button class="action-btn logout" onclick="showLogoutModal()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      Logout
+    </button>
+    
+    <button class="action-btn delete" onclick="showDeleteModal()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+      Delete Account
+    </button>
+  </div>
+
+</main>
+
+<!-- Edit Modal (Phone/Name) -->
+<div class="modal-overlay" id="editModal">
+  <div class="modal">
+    <h3 id="editModalTitle">Edit</h3>
+    <div class="form-group">
+      <label class="form-label" id="editFieldLabel"></label>
+      <input type="text" class="form-input" id="editFieldInput" />
+      <div class="error-message" id="editError"></div>
+    </div>
+    <div class="modal-buttons">
+      <button class="modal-btn cancel" onclick="closeEditModal()">Cancel</button>
+      <button class="modal-btn confirm" onclick="saveEdit()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Password Modal -->
+<div class="modal-overlay" id="passwordModal">
+  <div class="modal">
+    <h3>🔐 Change Password</h3>
+    <div class="form-group">
+      <label class="form-label">Current Password</label>
+      <input type="password" class="form-input" id="currentPassword" placeholder="Enter current password" />
+    </div>
+    <div class="form-group">
+      <label class="form-label">New Password</label>
+      <input type="password" class="form-input" id="newPassword" placeholder="Enter new password" />
+    </div>
+    <div class="form-group">
+      <label class="form-label">Confirm New Password</label>
+      <input type="password" class="form-input" id="confirmNewPassword" placeholder="Confirm new password" />
+    </div>
+    <div class="error-message" id="passwordError"></div>
+    <div class="modal-buttons">
+      <button class="modal-btn cancel" onclick="closePasswordModal()">Cancel</button>
+      <button class="modal-btn confirm" onclick="changePassword()">Update</button>
+    </div>
+  </div>
+</div>
+
+<!-- PIN Modal -->
+<div class="modal-overlay" id="pinModal">
+  <div class="modal">
+    <h3>🔢 Change Withdrawal PIN</h3>
+    <div class="form-group">
+      <label class="form-label">Current PIN</label>
+      <div class="pin-inputs">
+        <input type="password" class="pin-input" id="cp1" maxlength="1" oninput="handlePinInput(this, 'cp2')" />
+        <input type="password" class="pin-input" id="cp2" maxlength="1" oninput="handlePinInput(this, 'cp3')" />
+        <input type="password" class="pin-input" id="cp3" maxlength="1" oninput="handlePinInput(this, 'cp4')" />
+        <input type="password" class="pin-input" id="cp4" maxlength="1" />
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">New PIN</label>
+      <div class="pin-inputs">
+        <input type="password" class="pin-input" id="np1" maxlength="1" oninput="handlePinInput(this, 'np2')" />
+        <input type="password" class="pin-input" id="np2" maxlength="1" oninput="handlePinInput(this, 'np3')" />
+        <input type="password" class="pin-input" id="np3" maxlength="1" oninput="handlePinInput(this, 'np4')" />
+        <input type="password" class="pin-input" id="np4" maxlength="1" />
+      </div>
+    </div>
+    <div class="error-message" id="pinModalError"></div>
+    <div class="modal-buttons">
+      <button class="modal-btn cancel" onclick="closePinModal()">Cancel</button>
+      <button class="modal-btn confirm" onclick="changePin()">Update</button>
+    </div>
+  </div>
+</div>
+
+<!-- Logout Modal -->
+<div class="modal-overlay" id="logoutModal">
+  <div class="modal">
+    <h3>Sign Out?</h3>
+    <p style="text-align:center;color:var(--muted);margin-bottom:20px;">Are you sure you want to sign out?</p>
+    <div class="modal-buttons">
+      <button class="modal-btn cancel" onclick="closeLogoutModal()">Cancel</button>
+      <button class="modal-btn danger" onclick="handleLogout()">Sign Out</button>
+    </div>
+  </div>
+</div>
+
+<!-- Delete Modal -->
+<div class="modal-overlay" id="deleteModal">
+  <div class="modal">
+    <h3>🗑️ Delete Account?</h3>
+    <p style="text-align:center;color:var(--muted);margin-bottom:20px;">This action cannot be undone. All your data will be permanently deleted.</p>
+    <div class="modal-buttons">
+      <button class="modal-btn cancel" onclick="closeDeleteModal()">Cancel</button>
+      <button class="modal-btn danger" onclick="deleteAccount()">Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- Bottom Navigation -->
+<nav class="bottom-nav">
+  <a href="dashboard.html" class="nav-item">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
+    Home
+  </a>
+  <a href="deposit.html" class="nav-item">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+    Deposit
+  </a>
+  <a href="withdraw.html" class="nav-item">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="12" y1="10" x2="12" y2="18"/><polyline points="9 15 12 18 15 15"/></svg>
+    Withdraw
+  </a>
+  <a href="investments.html" class="nav-item">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+    Invest
+  </a>
+  <a href="profile.html" class="nav-item active">
+    <svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+    Profile
+  </a>
+</nav>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getAuth, onAuthStateChanged, signOut, updatePassword, reauthenticateWithCredential, EmailAuthProvider, deleteUser } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+  import { getFirestore, doc, getDoc, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyDT0ACobk5YMFgrqxb-VOnfELXTyssrOtA",
+    authDomain: "newpro-d830e.firebaseapp.com",
+    projectId: "newpro-d830e",
+    storageBucket: "newpro-d830e.firebasestorage.app",
+    messagingSenderId: "642315724384",
+    appId: "1:642315724384:web:19def936898718e9300505"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+
+  let currentUser = null;
+  let userData = null;
+
+  function showToast(type, title, message, duration = 4000) {
+    const toast = document.getElementById('toast');
+    toast.className = 'toast ' + type;
+    document.getElementById('toastTitle').textContent = title;
+    document.getElementById('toastMessage').textContent = message;
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), duration);
+  }
+
+  function formatNaira(amount) {
+    return '₦' + Number(amount).toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  function formatDate(timestamp) {
+    if (!timestamp) return '--';
+    const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+    return date.toLocaleDateString('en-NG', { year: 'numeric', month: 'long', day: 'numeric' });
+  }
+
+  function formatNairaShort(amount) {
+    if (amount >= 1000000) return '₦' + (amount / 1000000).toFixed(1) + 'M';
+    if (amount >= 1000) return '₦' + (amount / 1000).toFixed(0) + 'K';
+    return '₦' + amount;
+  }
+
+  // PIN input handler
+  window.handlePinInput = function(current, nextId) {
+    if (current.value.length === 1 && nextId) {
+      document.getElementById(nextId)?.focus();
+    }
+  };
+
+  // Update earnings chart
+  function updateChart(deposits, withdrawals, referrals, investments) {
+    const values = [deposits, withdrawals, referrals, investments];
+    const maxVal = Math.max(...values, 1);
+    
+    const bars = [
+      { id: 'barDeposit', value: deposits },
+      { id: 'barWithdrawal', value: withdrawals },
+      { id: 'barReferral', value: referrals },
+      { id: 'barInvestment', value: investments }
+    ];
+    
+    bars.forEach(bar => {
+      const el = document.getElementById(bar.id);
+      const heightPercent = (bar.value / maxVal) * 100;
+      const minHeight = bar.value > 0 ? 20 : 8;
+      el.style.height = Math.max(heightPercent, bar.value > 0 ? 5 : 3) + '%';
+      el.querySelector('.chart-value').textContent = formatNairaShort(bar.value);
+    });
+  }
+
+  // Load profile data
+  async function loadProfile(uid) {
+    try {
+      const userSnap = await getDoc(doc(db, 'users', uid));
+      if (!userSnap.exists()) return;
+      
+      userData = userSnap.data();
+      
+      // Header
+      document.getElementById('profileEmail').textContent = userData.email || '--';
+      document.getElementById('profileAvatar').textContent = (userData.email || 'E').charAt(0).toUpperCase();
+      document.getElementById('profileJoined').textContent = 'Joined: ' + formatDate(userData.createdAt);
+      document.getElementById('profileReferral').textContent = 'Ref: ' + (userData.referralCode || '--------');
+      
+      // Personal info
+      document.getElementById('displayEmail').textContent = userData.email || '--';
+      document.getElementById('displayPhone').textContent = userData.phone || 'Not set';
+      document.getElementById('displayName').textContent = userData.fullName || 'Not set';
+      
+      // Earnings chart
+      updateChart(
+        userData.totalDeposits || 0,
+        userData.totalWithdrawals || 0,
+        userData.referralEarnings || 0,
+        (userData.totalInvested || 0)
+      );
+      
+    } catch (error) {
+      console.error('Error loading profile:', error);
+    }
+  }
+
+  // Edit modal
+  let editField = '';
+  window.openEditModal = function(field) {
+    editField = field;
+    const modal = document.getElementById('editModal');
+    const title = document.getElementById('editModalTitle');
+    const label = document.getElementById('editFieldLabel');
+    const input = document.getElementById('editFieldInput');
+    
+    document.getElementById('editError').classList.remove('show');
+    
+    if (field === 'phone') {
+      title.textContent = '📱 Edit Phone';
+      label.textContent = 'Phone Number';
+      input.value = userData.phone || '';
+      input.placeholder = 'Enter phone number';
+    } else if (field === 'name') {
+      title.textContent = '👤 Edit Name';
+      label.textContent = 'Full Name';
+      input.value = userData.fullName || '';
+      input.placeholder = 'Enter your full name';
+    }
+    
+    modal.classList.add('show');
+  };
+
+  window.closeEditModal = function() {
+    document.getElementById('editModal').classList.remove('show');
+  };
+
+  window.saveEdit = async function() {
+    if (!currentUser) return;
+    const value = document.getElementById('editFieldInput').value.trim();
+    
+    if (!value) {
+      document.getElementById('editError').textContent = 'This field cannot be empty.';
+      document.getElementById('editError').classList.add('show');
+      return;
+    }
+    
+    if (editField === 'phone' && !/^(\+234|0)?[789]\d{9}$/.test(value.replace(/\s/g, ''))) {
+      document.getElementById('editError').textContent = 'Enter a valid Nigerian phone number.';
+      document.getElementById('editError').classList.add('show');
+      return;
+    }
+    
+    try {
+      const updateData = {};
+      if (editField === 'phone') updateData.phone = value;
+      if (editField === 'name') updateData.fullName = value;
+      
+      await updateDoc(doc(db, 'users', currentUser.uid), updateData);
+      userData = { ...userData, ...updateData };
+      
+      if (editField === 'phone') document.getElementById('displayPhone').textContent = value;
+      if (editField === 'name') document.getElementById('displayName').textContent = value;
+      
+      closeEditModal();
+      showToast('success', 'Updated!', `${editField === 'phone' ? 'Phone' : 'Name'} updated successfully.`);
+    } catch (error) {
+      showToast('error', 'Error', 'Failed to update. Please try again.');
+    }
+  };
+
+  // Password modal
+  window.openPasswordModal = function() {
+    document.getElementById('passwordError').classList.remove('show');
+    document.getElementById('currentPassword').value = '';
+    document.getElementById('newPassword').value = '';
+    document.getElementById('confirmNewPassword').value = '';
+    document.getElementById('passwordModal').classList.add('show');
+  };
+
+  window.closePasswordModal = function() {
+    document.getElementById('passwordModal').classList.remove('show');
+  };
+
+  window.changePassword = async function() {
+    const current = document.getElementById('currentPassword').value;
+    const newPw = document.getElementById('newPassword').value;
+    const confirm = document.getElementById('confirmNewPassword').value;
+    
+    if (!current || !newPw || !confirm) {
+      document.getElementById('passwordError').textContent = 'All fields are required.';
+      document.getElementById('passwordError').classList.add('show');
+      return;
+    }
+    
+    if (newPw.length < 6) {
+      document.getElementById('passwordError').textContent = 'Password must be at least 6 characters.';
+      document.getElementById('passwordError').classList.add('show');
+      return;
+    }
+    
+    if (newPw !== confirm) {
+      document.getElementById('passwordError').textContent = 'Passwords do not match.';
+      document.getElementById('passwordError').classList.add('show');
+      return;
+    }
+    
+    try {
+      const credential = EmailAuthProvider.credential(currentUser.email, current);
+      await reauthenticateWithCredential(currentUser, credential);
+      await updatePassword(currentUser, newPw);
+      
+      closePasswordModal();
+      showToast('success', 'Password Updated!', 'Your password has been changed successfully.');
+    } catch (error) {
+      if (error.code === 'auth/wrong-password') {
+        document.getElementById('passwordError').textContent = 'Current password is incorrect.';
+      } else {
+        document.getElementById('passwordError').textContent = 'Failed to update password. Please try again.';
+      }
+      document.getElementById('passwordError').classList.add('show');
+    }
+  };
+
+  // PIN modal
+  window.openPinModal = function() {
+    document.getElementById('pinModalError').classList.remove('show');
+    ['cp1','cp2','cp3','cp4','np1','np2','np3','np4'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('pinModal').classList.add('show');
+  };
+
+  window.closePinModal = function() {
+    document.getElementById('pinModal').classList.remove('show');
+  };
+
+  window.changePin = async function() {
+    if (!currentUser) return;
+    
+    const currentPin = ['cp1','cp2','cp3','cp4'].map(id => document.getElementById(id).value).join('');
+    const newPin = ['np1','np2','np3','np4'].map(id => document.getElementById(id).value).join('');
+    
+    if (currentPin.length !== 4 || newPin.length !== 4) {
+      document.getElementById('pinModalError').textContent = 'Please enter a complete 4-digit PIN.';
+      document.getElementById('pinModalError').classList.add('show');
+      return;
+    }
+    
+    if (currentPin !== userData.withdrawalPin) {
+      document.getElementById('pinModalError').textContent = 'Current PIN is incorrect.';
+      document.getElementById('pinModalError').classList.add('show');
+      return;
+    }
+    
+    try {
+      await updateDoc(doc(db, 'users', currentUser.uid), { withdrawalPin: newPin });
+      userData.withdrawalPin = newPin;
+      
+      closePinModal();
+      showToast('success', 'PIN Updated!', 'Your withdrawal PIN has been changed successfully.');
+    } catch (error) {
+      document.getElementById('pinModalError').textContent = 'Failed to update PIN.';
+      document.getElementById('pinModalError').classList.add('show');
+    }
+  };
+
+  // Logout
+  window.showLogoutModal = function() {
+    document.getElementById('logoutModal').classList.add('show');
+  };
+  window.closeLogoutModal = function() {
+    document.getElementById('logoutModal').classList.remove('show');
+  };
+  window.handleLogout = async function() {
+    try {
+      await signOut(auth);
+      showToast('success', 'Signed Out', 'Redirecting...');
+      setTimeout(() => window.location.href = 'login.html', 1500);
+    } catch (error) {
+      showToast('error', 'Error', 'Failed to sign out.');
+    }
+  };
+
+  // Delete account
+  window.showDeleteModal = function() {
+    document.getElementById('deleteModal').classList.add('show');
+  };
+  window.closeDeleteModal = function() {
+    document.getElementById('deleteModal').classList.remove('show');
+  };
+  window.deleteAccount = async function() {
+    try {
+      if (currentUser) {
+        await deleteUser(currentUser);
+      }
+      showToast('success', 'Account Deleted', 'Your account has been deleted.');
+      setTimeout(() => window.location.href = 'index.html', 2000);
+    } catch (error) {
+      if (error.code === 'auth/requires-recent-login') {
+        showToast('error', 'Re-login Required', 'Please log out and log in again to delete your account.');
+      } else {
+        showToast('error', 'Error', 'Failed to delete account.');
+      }
+    }
+  };
+
+  // Auth listener
+  onAuthStateChanged(auth, (user) => {
+    if (user) {
+      currentUser = user;
+      loadProfile(user.uid);
+    } else {
+      window.location.href = 'login.html';
+    }
+  });
+</script>
+
+</body>
+</html>
