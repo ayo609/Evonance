@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
+  <title>Evonance – Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0a0f1a; --card: rgba(17, 25, 40, 0.9); --card-border: rgba(255,255,255,0.06);
+      --primary: #10b981; --primary-dark: #059669; --primary-soft: rgba(16,185,129,0.1);
+      --accent: #34d399; --text: #f1f5f9; --muted: #94a3b8; --border: rgba(255,255,255,0.06);
+      --input-bg: rgba(15,23,42,0.8); --success: #10b981; --error: #ef4444; --warning: #f59e0b;
+      --info: #3b82f6; --purple: #8b5cf6; --glow-card: 0 4px 24px rgba(0,0,0,0.3);
+    }
+    body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); min-height: 100vh; color: var(--text); padding-bottom: 80px; }
+
+    .toast { position: fixed; top: 20px; left: 20px; background: var(--card); backdrop-filter: blur(20px); border: 1px solid var(--border); border-radius: 16px; padding: 16px 24px; display: flex; align-items: center; gap: 12px; z-index: 1000; transform: translateX(-120%); transition: transform 0.5s cubic-bezier(0.68,-0.55,0.27,1.55); box-shadow: 0 20px 40px rgba(0,0,0,0.4); max-width: 400px; }
+    .toast.show { transform: translateX(0); }
+    .toast.success { border-left: 4px solid var(--success); }
+    .toast.error { border-left: 4px solid var(--error); }
+    .toast.warning { border-left: 4px solid var(--warning); }
+    .toast-icon { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .toast.success .toast-icon { background: rgba(16,185,129,0.15); }
+    .toast-icon svg { width: 24px; height: 24px; }
+    .toast.success .toast-icon svg { color: var(--success); }
+    .toast-content h4 { font-size: 0.95rem; font-weight: 700; color: var(--text); margin-bottom: 2px; }
+    .toast-content p { font-size: 0.8rem; color: var(--muted); line-height: 1.3; }
+
+    .header { background: var(--card); backdrop-filter: blur(20px); border-bottom: 1px solid var(--border); padding: 14px 20px; position: sticky; top: 0; z-index: 100; }
+    .header-content { display: flex; align-items: center; justify-content: space-between; max-width: 900px; margin: 0 auto; }
+    .header-left { display: flex; align-items: center; gap: 10px; }
+    .logo-small { width: 34px; height: 34px; background: linear-gradient(135deg, var(--primary), var(--accent)); border-radius: 10px; display: flex; align-items: center; justify-content: center; }
+    .logo-small svg { width: 17px; height: 17px; color: white; }
+    .brand-name { font-size: 1.1rem; font-weight: 800; color: var(--text); letter-spacing: -0.5px; }
+    .brand-name span { background: linear-gradient(135deg, var(--primary), var(--accent)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .header-right { display: flex; align-items: center; gap: 12px; }
+    .notification-btn { position: relative; background: none; border: none; color: var(--muted); padding: 8px; border-radius: 10px; cursor: pointer; display: flex; }
+    .notification-btn:hover { background: rgba(255,255,255,0.05); color: var(--text); }
+    .notification-btn svg { width: 22px; height: 22px; }
+    .notification-badge { position: absolute; top: 3px; right: 3px; width: 16px; height: 16px; background: var(--error); border-radius: 50%; font-size: 0.6rem; font-weight: 700; color: white; display: flex; align-items: center; justify-content: center; display: none; }
+    .notification-badge.show { display: flex; }
+    .logout-btn { background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.2); color: #fca5a5; padding: 7px 14px; border-radius: 50px; font-family: inherit; font-size: 0.8rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 5px; }
+    .logout-btn:hover { background: rgba(239,68,68,0.15); }
+    .logout-btn svg { width: 14px; height: 14px; }
+
+    .main-content { max-width: 700px; margin: 0 auto; padding: 18px; display: flex; flex-direction: column; gap: 16px; }
+
+    .welcome-section { display: flex; align-items: center; justify-content: space-between; }
+    .welcome-text h1 { font-size: 1.4rem; font-weight: 800; }
+    .welcome-text p { font-size: 0.8rem; color: var(--muted); margin-top: 2px; }
+    .user-avatar { width: 44px; height: 44px; background: linear-gradient(135deg, var(--primary), var(--accent)); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; font-weight: 700; color: white; flex-shrink: 0; }
+
+    /* ========== DAILY BONUS CARD ========== */
+    .daily-bonus-card {
+      background: linear-gradient(135deg, rgba(245,158,11,0.1), rgba(251,191,36,0.05));
+      border: 1px solid rgba(245,158,11,0.25); border-radius: 16px; padding: 16px 18px;
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+      box-shadow: 0 4px 20px rgba(245,158,11,0.08);
+    }
+    .daily-bonus-info { display: flex; align-items: center; gap: 10px; }
+    .daily-bonus-icon { font-size: 2rem; }
+    .daily-bonus-text h4 { font-size: 0.9rem; font-weight: 700; color: #fbbf24; }
+    .daily-bonus-text p { font-size: 0.72rem; color: var(--muted); margin-top: 2px; }
+    .daily-bonus-btn {
+      padding: 10px 18px; border-radius: 50px; font-family: inherit; font-size: 0.8rem; font-weight: 700;
+      cursor: pointer; border: none; transition: all 0.3s; white-space: nowrap;
+      background: linear-gradient(135deg, #f59e0b, #d97706); color: #1a1a1a;
+      box-shadow: 0 4px 16px rgba(245,158,11,0.3);
+    }
+    .daily-bonus-btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 6px 24px rgba(245,158,11,0.5); }
+    .daily-bonus-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .daily-bonus-btn.claimed { background: rgba(16,185,129,0.15); color: var(--success); box-shadow: none; cursor: default; }
+    .daily-bonus-btn.no-investment { background: rgba(239,68,68,0.1); color: #f87171; box-shadow: none; cursor: not-allowed; }
+
+    .wallet-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .wallet-card {
+      background: var(--card); backdrop-filter: blur(20px); border: 1px solid var(--border);
+      border-radius: 16px; padding: 16px; position: relative; overflow: hidden;
+      box-shadow: var(--glow-card);
+    }
+    .wallet-label { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin-bottom: 6px; font-weight: 600; }
+    .wallet-icon { font-size: 1.5rem; margin-bottom: 6px; }
+    .wallet-balance { font-size: 1.4rem; font-weight: 800; }
+    .wallet-card.deposit .wallet-balance { color: #60a5fa; }
+    .wallet-card.withdraw .wallet-balance { color: var(--accent); }
+    .wallet-sub { font-size: 0.65rem; color: var(--muted); }
+    .balance-toggle {
+      display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 6px;
+      padding: 5px 10px; background: var(--input-bg); border: 1px solid var(--border);
+      border-radius: 50px; color: var(--muted); font-size: 0.7rem; cursor: pointer; font-family: inherit;
+    }
+    .balance-toggle:hover { border-color: var(--primary); color: var(--text); }
+
+    .quick-actions { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+    .action-btn {
+      background: var(--card); border: 1px solid var(--border); border-radius: 14px;
+      padding: 14px 8px; text-align: center; cursor: pointer; transition: all 0.3s;
+      text-decoration: none; display: flex; flex-direction: column; align-items: center; gap: 6px;
+      box-shadow: var(--glow-card);
+    }
+    .action-btn:hover { border-color: var(--primary); transform: translateY(-2px); }
+    .action-icon { width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; }
+    .action-icon.deposit { background: rgba(59,130,246,0.12); }
+    .action-icon.withdraw { background: rgba(16,185,129,0.12); }
+    .action-icon.invest { background: rgba(245,158,11,0.12); }
+    .action-icon.referral { background: rgba(139,92,246,0.12); }
+    .action-label { font-size: 0.7rem; font-weight: 600; color: var(--text); }
+
+    .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+    .stat-card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 14px; text-align: center; box-shadow: var(--glow-card); }
+    .stat-value { font-size: 1.1rem; font-weight: 800; }
+    .stat-label { font-size: 0.65rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px; }
+
+    .section-card { background: var(--card); backdrop-filter: blur(20px); border: 1px solid var(--border); border-radius: 16px; padding: 18px; box-shadow: var(--glow-card); }
+    .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+    .section-title { font-size: 0.9rem; font-weight: 700; display: flex; align-items: center; gap: 6px; }
+    .section-title svg { width: 18px; height: 18px; color: var(--primary); }
+    .view-all { font-size: 0.75rem; color: var(--primary); text-decoration: none; font-weight: 600; }
+    .view-all:hover { color: var(--accent); }
+
+    .notification-list { display: flex; flex-direction: column; gap: 8px; }
+    .notification-item { background: var(--input-bg); border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; display: flex; align-items: flex-start; gap: 10px; }
+    .notification-item.unread { border-left: 3px solid var(--primary); background: var(--primary-soft); }
+    .notification-dot { width: 7px; height: 7px; background: var(--primary); border-radius: 50%; margin-top: 5px; flex-shrink: 0; }
+    .notification-content h4 { font-size: 0.8rem; font-weight: 600; margin-bottom: 2px; }
+    .notification-content p { font-size: 0.72rem; color: var(--muted); line-height: 1.3; }
+    .notification-time { font-size: 0.65rem; color: var(--muted); margin-top: 4px; }
+
+    .transaction-list { display: flex; flex-direction: column; gap: 6px; }
+    .transaction-item { display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; background: var(--input-bg); border-radius: 10px; border: 1px solid var(--border); }
+    .transaction-left { display: flex; align-items: center; gap: 10px; }
+    .transaction-icon { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1rem; }
+    .transaction-icon.credit { background: rgba(16,185,129,0.12); }
+    .transaction-icon.debit { background: rgba(239,68,68,0.12); }
+    .transaction-icon.referral { background: rgba(139,92,246,0.12); }
+    .transaction-icon.roi { background: rgba(245,158,11,0.12); }
+    .transaction-info h4 { font-size: 0.8rem; font-weight: 600; }
+    .transaction-info p { font-size: 0.68rem; color: var(--muted); }
+    .transaction-right { text-align: right; }
+    .transaction-amount { font-size: 0.85rem; font-weight: 700; }
+    .transaction-amount.credit { color: var(--success); }
+    .transaction-amount.debit { color: var(--error); }
+    .transaction-status { font-size: 0.6rem; font-weight: 600; padding: 2px 7px; border-radius: 50px; display: inline-block; margin-top: 2px; }
+    .transaction-status.completed { background: rgba(16,185,129,0.12); color: var(--success); }
+    .transaction-status.pending { background: rgba(245,158,11,0.12); color: var(--warning); }
+
+    .referral-code-box { background: var(--input-bg); border: 2px dashed var(--border); border-radius: 12px; padding: 14px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+    .referral-code-text { font-size: 1.1rem; font-weight: 800; letter-spacing: 2px; color: var(--primary); }
+    .copy-btn { background: var(--primary); color: white; border: none; padding: 7px 14px; border-radius: 50px; font-family: inherit; font-size: 0.72rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 5px; }
+    .copy-btn:hover { background: var(--primary-dark); }
+    .referral-stats { display: flex; gap: 10px; }
+    .referral-stat { flex: 1; background: var(--input-bg); border-radius: 10px; padding: 10px; text-align: center; }
+    .referral-stat-value { font-size: 1rem; font-weight: 800; }
+    .referral-stat-label { font-size: 0.62rem; color: var(--muted); margin-top: 2px; }
+
+    .no-data { text-align: center; padding: 25px; color: var(--muted); font-size: 0.82rem; }
+
+    .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: var(--card); backdrop-filter: blur(20px); border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: space-around; padding: 7px 0 10px; z-index: 100; }
+    .nav-item { display: flex; flex-direction: column; align-items: center; gap: 3px; text-decoration: none; color: var(--muted); font-size: 0.63rem; font-weight: 600; padding: 4px 10px; border-radius: 10px; }
+    .nav-item.active { color: var(--primary); }
+    .nav-item svg { width: 22px; height: 22px; }
+    .nav-item:hover { color: var(--text); }
+
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.75); backdrop-filter: blur(4px); z-index: 200; align-items: center; justify-content: center; padding: 20px; }
+    .modal-overlay.show { display: flex; }
+    .modal { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 28px; max-width: 360px; width: 100%; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.6); animation: modalIn 0.3s cubic-bezier(0.34,1.56,0.64,1); }
+    @keyframes modalIn { from{opacity:0;transform:scale(0.9)translateY(20px)} to{opacity:1;transform:scale(1)translateY(0)} }
+    .modal-icon { width: 56px; height: 56px; border-radius: 50%; margin: 0 auto 14px; display: flex; align-items: center; justify-content: center; }
+    .modal-icon.warning { background: rgba(245,158,11,0.12); }
+    .modal-icon svg { width: 28px; height: 28px; color: var(--warning); }
+    .modal h3 { font-size: 1rem; font-weight: 700; margin-bottom: 6px; }
+    .modal p { font-size: 0.8rem; color: var(--muted); margin-bottom: 20px; }
+    .modal-buttons { display: flex; gap: 8px; }
+    .modal-btn { flex: 1; padding: 11px; border-radius: 50px; font-family: inherit; font-size: 0.85rem; font-weight: 700; cursor: pointer; border: none; }
+    .modal-btn.cancel { background: var(--input-bg); color: var(--text); border: 1px solid var(--border); }
+    .modal-btn.confirm { background: var(--error); color: white; }
+
+    @media (max-width: 480px) {
+      .main-content { padding: 14px; gap: 12px; }
+      .wallet-grid { grid-template-columns: 1fr; }
+      .quick-actions { grid-template-columns: repeat(4, 1fr); gap: 6px; }
+      .action-btn { padding: 10px 4px; }
+      .action-icon { width: 34px; height: 34px; font-size: 1.1rem; }
+      .action-label { font-size: 0.62rem; }
+      .daily-bonus-card { flex-direction: column; text-align: center; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="toast success" id="toast"><div class="toast-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div><div class="toast-content"><h4 id="toastTitle">Success</h4><p id="toastMessage"></p></div></div>
+
+<header class="header">
+  <div class="header-content">
+    <div class="header-left">
+      <div class="logo-small"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></div>
+      <span class="brand-name">Ev<span>onance</span></span>
+    </div>
+    <div class="header-right">
+      <button class="notification-btn" onclick="toggleNotifications()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg><span class="notification-badge" id="notificationBadge">0</span></button>
+      <button class="logout-btn" onclick="showLogoutModal()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>Logout</button>
+    </div>
+  </div>
+</header>
+
+<main class="main-content">
+  
+  <div class="welcome-section">
+    <div class="welcome-text"><h1>👋 Welcome back!</h1><p id="userGreeting">Loading...</p></div>
+    <div class="user-avatar" id="userAvatar">E</div>
+  </div>
+
+  <!-- ========== DAILY LOGIN BONUS ========== -->
+  <div class="daily-bonus-card" id="dailyBonusCard">
+    <div class="daily-bonus-info">
+      <div class="daily-bonus-icon">🎁</div>
+      <div class="daily-bonus-text">
+        <h4>Daily Login Bonus</h4>
+        <p id="dailyBonusStatus">Claim ₦200 daily reward</p>
+      </div>
+    </div>
+    <button class="daily-bonus-btn" id="dailyBonusBtn" onclick="claimDailyBonus()">
+      🎁 Claim ₦200
+    </button>
+  </div>
+
+  <div class="wallet-grid">
+    <div class="wallet-card deposit">
+      <div class="wallet-label">Deposit Wallet</div><div class="wallet-icon">💳</div>
+      <div class="wallet-balance" id="depositBalance">₦0.00</div>
+      <div class="wallet-sub">For savings & investments</div>
+    </div>
+    <div class="wallet-card withdraw">
+      <div class="wallet-label">Withdrawal Wallet</div><div class="wallet-icon">💸</div>
+      <div class="wallet-balance" id="withdrawalBalance">₦0.00</div>
+      <div class="wallet-sub">Available for cashout</div>
+    </div>
+  </div>
+  <button class="balance-toggle" onclick="toggleBalanceVisibility()" id="balanceToggle">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg> Hide Balance
+  </button>
+
+  <div class="quick-actions">
+    <a href="deposit.html" class="action-btn"><div class="action-icon deposit">💳</div><span class="action-label">Deposit</span></a>
+    <a href="withdraw.html" class="action-btn"><div class="action-icon withdraw">💸</div><span class="action-label">Withdraw</span></a>
+    <a href="investments.html" class="action-btn"><div class="action-icon invest">📈</div><span class="action-label">Invest</span></a>
+    <a href="referrals.html" class="action-btn"><div class="action-icon referral">👥</div><span class="action-label">Referral</span></a>
+  </div>
+
+  <div class="stats-grid">
+    <div class="stat-card"><div class="stat-value" id="totalDeposits">₦0.00</div><div class="stat-label">Total Deposits</div></div>
+    <div class="stat-card"><div class="stat-value" id="totalWithdrawals">₦0.00</div><div class="stat-label">Total Withdrawals</div></div>
+    <div class="stat-card"><div class="stat-value" id="referralEarnings">₦0.00</div><div class="stat-label">Referral Earnings</div></div>
+    <div class="stat-card"><div class="stat-value" id="activeInvestments">0</div><div class="stat-label">Active Investments</div></div>
+  </div>
+
+  <div class="section-card" id="notificationsSection">
+    <div class="section-header"><span class="section-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>Notifications</span></div>
+    <div class="notification-list" id="notificationList"><div class="no-data">No notifications yet</div></div>
+  </div>
+
+  <div class="section-card">
+    <div class="section-header"><span class="section-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M22 7l-10 7L2 7"/></svg>Recent Transactions</span><a href="transactions.html" class="view-all">View All →</a></div>
+    <div class="transaction-list" id="transactionList"><div class="no-data">No transactions yet</div></div>
+  </div>
+
+  <div class="section-card">
+    <div class="section-header"><span class="section-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>Your Referral</span><a href="referrals.html" class="view-all">View Details →</a></div>
+    <div class="referral-code-box"><span class="referral-code-text" id="referralCode">--------</span><button class="copy-btn" onclick="copyReferralCode()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>Copy</button></div>
+    <div class="referral-stats">
+      <div class="referral-stat"><div class="referral-stat-value" id="referralCount">0</div><div class="referral-stat-label">Referrals</div></div>
+      <div class="referral-stat"><div class="referral-stat-value" id="referralEarningsDisplay">₦0.00</div><div class="referral-stat-label">Earnings</div></div>
+    </div>
+  </div>
+
+</main>
+
+<nav class="bottom-nav">
+  <a href="dashboard.html" class="nav-item active"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>Home</a>
+  <a href="deposit.html" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>Deposit</a>
+  <a href="withdraw.html" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="12" y1="10" x2="12" y2="18"/><polyline points="9 15 12 18 15 15"/></svg>Withdraw</a>
+  <a href="investments.html" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Invest</a>
+  <a href="profile.html" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Profile</a>
+</nav>
+
+<div class="modal-overlay" id="logoutModal">
+  <div class="modal"><div class="modal-icon warning"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></div><h3>Sign Out?</h3><p>Are you sure you want to sign out?</p><div class="modal-buttons"><button class="modal-btn cancel" onclick="closeLogoutModal()">Cancel</button><button class="modal-btn confirm" onclick="handleLogout()">Sign Out</button></div></div>
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+  import { getFirestore, doc, getDoc, updateDoc, collection, query, where, orderBy, getDocs, onSnapshot, serverTimestamp, increment, addDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyDT0ACobk5YMFgrqxb-VOnfELXTyssrOtA",
+    authDomain: "newpro-d830e.firebaseapp.com",
+    projectId: "newpro-d830e",
+    storageBucket: "newpro-d830e.firebasestorage.app",
+    messagingSenderId: "642315724384",
+    appId: "1:642315724384:web:19def936898718e9300505"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+
+  const DAILY_BONUS_AMOUNT = 200;
+
+  let currentUser = null;
+  let balanceVisible = true;
+  let originalBalances = { deposit: 0, withdrawal: 0 };
+
+  function showToast(type, title, message, duration = 4000) {
+    const t = document.getElementById('toast'); t.className = 'toast ' + type;
+    document.getElementById('toastTitle').textContent = title;
+    document.getElementById('toastMessage').textContent = message;
+    t.classList.add('show'); setTimeout(() => t.classList.remove('show'), duration);
+  }
+
+  function formatNaira(amount) {
+    return '₦' + Number(amount).toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  function formatDate(timestamp) {
+    if (!timestamp) return '';
+    const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+    const now = new Date(); const diff = now - date; const days = Math.floor(diff / 86400000);
+    if (days === 0) { const h = Math.floor(diff / 3600000); if (h === 0) { const m = Math.floor(diff / 60000); return m <= 1 ? 'Just now' : m + 'm ago'; } return h + 'h ago'; }
+    if (days === 1) return 'Yesterday'; if (days < 7) return days + 'd ago';
+    return date.toLocaleDateString('en-NG', { month: 'short', day: 'numeric' });
+  }
+
+  window.toggleBalanceVisibility = function() {
+    balanceVisible = !balanceVisible;
+    const btn = document.getElementById('balanceToggle');
+    if (balanceVisible) {
+      document.getElementById('depositBalance').textContent = formatNaira(originalBalances.deposit);
+      document.getElementById('withdrawalBalance').textContent = formatNaira(originalBalances.withdrawal);
+      btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg> Hide Balance`;
+    } else {
+      document.getElementById('depositBalance').textContent = '₦••••••';
+      document.getElementById('withdrawalBalance').textContent = '₦••••••';
+      btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg> Show Balance`;
+    }
+  };
+
+  window.copyReferralCode = function() {
+    const code = document.getElementById('referralCode').textContent;
+    if (code === '--------') return;
+    navigator.clipboard.writeText(code).then(() => showToast('success', 'Copied!', 'Referral code copied.'));
+  };
+
+  window.showLogoutModal = () => document.getElementById('logoutModal').classList.add('show');
+  window.closeLogoutModal = () => document.getElementById('logoutModal').classList.remove('show');
+  window.handleLogout = async () => { await signOut(auth); showToast('success', 'Signed Out', 'Redirecting...'); setTimeout(() => window.location.href = 'login.html', 1500); };
+  window.toggleNotifications = () => document.getElementById('notificationsSection').scrollIntoView({ behavior: 'smooth' });
+
+  // ============ DAILY LOGIN BONUS ============
+  function canClaimToday(lastClaim) {
+    if (!lastClaim) return true;
+    const last = lastClaim.toDate ? lastClaim.toDate() : new Date(lastClaim);
+    const now = new Date();
+    return last.getDate() !== now.getDate() || last.getMonth() !== now.getMonth() || last.getFullYear() !== now.getFullYear();
+  }
+
+  function updateBonusButton(userData) {
+    const btn = document.getElementById('dailyBonusBtn');
+    const status = document.getElementById('dailyBonusStatus');
+    const hasActiveInvestment = (userData.activeInvestments || 0) > 0;
+    const canClaim = canClaimToday(userData.lastDailyBonus);
+
+    if (!hasActiveInvestment) {
+      btn.className = 'daily-bonus-btn no-investment';
+      btn.textContent = '🔒 Need Investment';
+      btn.disabled = true;
+      status.textContent = 'You need an active investment to claim';
+    } else if (canClaim) {
+      btn.className = 'daily-bonus-btn';
+      btn.textContent = '🎁 Claim ₦200';
+      btn.disabled = false;
+      status.textContent = 'Claim your ₦200 daily reward!';
+    } else {
+      btn.className = 'daily-bonus-btn claimed';
+      btn.textContent = '✅ Claimed Today';
+      btn.disabled = true;
+      status.textContent = 'Come back tomorrow for another ₦200!';
+    }
+  }
+
+  window.claimDailyBonus = async function() {
+    if (!currentUser) return;
+    
+    const btn = document.getElementById('dailyBonusBtn');
+    btn.disabled = true;
+    btn.textContent = 'Claiming...';
+
+    try {
+      const userSnap = await getDoc(doc(db, 'users', currentUser.uid));
+      if (!userSnap.exists()) throw new Error('User not found');
+      
+      const userData = userSnap.data();
+      
+      // Check active investment
+      if ((userData.activeInvestments || 0) < 1) {
+        showToast('error', 'Investment Required', 'You need at least one active investment to claim the daily bonus.');
+        updateBonusButton(userData);
+        return;
+      }
+
+      // Check if already claimed today
+      if (!canClaimToday(userData.lastDailyBonus)) {
+        showToast('warning', 'Already Claimed', 'You have already claimed your daily bonus today.');
+        updateBonusButton(userData);
+        return;
+      }
+
+      // Credit withdrawal wallet
+      await updateDoc(doc(db, 'users', currentUser.uid), {
+        withdrawalWallet: increment(DAILY_BONUS_AMOUNT),
+        totalEarnings: increment(DAILY_BONUS_AMOUNT),
+        lastDailyBonus: serverTimestamp()
+      });
+
+      // Create transaction
+      await addDoc(collection(db, 'transactions'), {
+        uid: currentUser.uid,
+        type: 'daily_bonus',
+        amount: DAILY_BONUS_AMOUNT,
+        status: 'completed',
+        createdAt: serverTimestamp(),
+        description: 'Daily login bonus'
+      });
+
+      // Create notification
+      await addDoc(collection(db, 'notifications'), {
+        uid: currentUser.uid,
+        title: '🎁 Daily Bonus Claimed!',
+        message: `You've claimed your ₦${DAILY_BONUS_AMOUNT} daily login bonus. It has been added to your Withdrawal Wallet.`,
+        type: 'daily_bonus',
+        read: false,
+        createdAt: serverTimestamp()
+      });
+
+      // Update UI
+      const updatedSnap = await getDoc(doc(db, 'users', currentUser.uid));
+      if (updatedSnap.exists()) {
+        updateBonusButton(updatedSnap.data());
+      }
+
+      showToast('success', 'Bonus Claimed! 🎉', `₦${DAILY_BONUS_AMOUNT} has been added to your Withdrawal Wallet.`);
+
+    } catch (error) {
+      console.error('Bonus error:', error);
+      showToast('error', 'Error', 'Failed to claim bonus. Try again.');
+      const snap = await getDoc(doc(db, 'users', currentUser.uid));
+      if (snap.exists()) updateBonusButton(snap.data());
+    }
+  };
+
+  // ============ ROI CREDITING ============
+  async function checkAndCreditMaturedInvestments(uid) {
+    try {
+      const q = query(collection(db, 'investments'), where('uid', '==', uid), where('status', '==', 'active'), where('roiCredited', '==', false));
+      const snap = await getDocs(q);
+      if (snap.empty) return;
+      
+      const now = new Date();
+      for (const d of snap.docs) {
+        const inv = d.data();
+        const created = inv.createdAt?.toDate();
+        if (!created) continue;
+        const maturity = new Date(created); maturity.setDate(maturity.getDate() + inv.totalDays);
+        if (now >= maturity) {
+          const payout = inv.amount + inv.totalProfit;
+          await updateDoc(doc(db, 'users', uid), { withdrawalWallet: increment(payout), totalEarnings: increment(inv.totalProfit), activeInvestments: increment(-1) });
+          await updateDoc(doc(db, 'investments', d.id), { status: 'completed', roiCredited: true, completedAt: serverTimestamp() });
+          await addDoc(collection(db, 'transactions'), { uid, type: 'investment_return', amount: payout, planName: inv.planName, status: 'completed', createdAt: serverTimestamp(), description: `ROI: ${inv.planName} - ${formatNaira(payout)}` });
+          await addDoc(collection(db, 'notifications'), { uid, title: '🎉 Investment Matured!', message: `Your ${inv.planName} returned ${formatNaira(payout)} to your Withdrawal Wallet.`, type: 'investment_return', read: false, createdAt: serverTimestamp() });
+          showToast('success', 'Investment Matured! 🎉', `Your ${inv.planName} returned ${formatNaira(payout)}.`);
+        }
+      }
+    } catch (e) { console.error(e); }
+  }
+
+  async function loadUserData(uid) {
+    try {
+      const snap = await getDoc(doc(db, 'users', uid));
+      if (!snap.exists()) return;
+      const u = snap.data();
+      
+      document.getElementById('userGreeting').textContent = 'Last login: Just now';
+      document.getElementById('userAvatar').textContent = (u.email || 'E').charAt(0).toUpperCase();
+      
+      originalBalances.deposit = u.depositWallet || 0;
+      originalBalances.withdrawal = u.withdrawalWallet || 0;
+      document.getElementById('depositBalance').textContent = formatNaira(originalBalances.deposit);
+      document.getElementById('withdrawalBalance').textContent = formatNaira(originalBalances.withdrawal);
+      
+      document.getElementById('referralCode').textContent = u.referralCode || '--------';
+      document.getElementById('totalDeposits').textContent = formatNaira(u.totalDeposits || 0);
+      document.getElementById('totalWithdrawals').textContent = formatNaira(u.totalWithdrawals || 0);
+      document.getElementById('referralEarnings').textContent = formatNaira(u.referralEarnings || 0);
+      document.getElementById('activeInvestments').textContent = u.activeInvestments || 0;
+      document.getElementById('referralCount').textContent = u.referralCount || 0;
+      document.getElementById('referralEarningsDisplay').textContent = formatNaira(u.referralEarnings || 0);
+      
+      updateBonusButton(u);
+      await checkAndCreditMaturedInvestments(uid);
+      loadTransactions(uid);
+      loadNotifications(uid);
+    } catch (e) { console.error(e); }
+  }
+
+  async function loadTransactions(uid) {
+    try {
+      const q = query(collection(db, 'transactions'), where('uid', '==', uid), orderBy('createdAt', 'desc'));
+      const snap = await getDocs(q);
+      const list = document.getElementById('transactionList');
+      if (snap.empty) { list.innerHTML = '<div class="no-data">No transactions yet</div>'; return; }
+      list.innerHTML = '';
+      let count = 0;
+      snap.forEach(d => {
+        if (count >= 5) return; count++;
+        const tx = d.data();
+        const isCredit = ['deposit','referral_earning','investment_return','daily_bonus'].includes(tx.type);
+        const iconClass = tx.type === 'referral_earning' ? 'referral' : tx.type === 'investment_return' ? 'roi' : isCredit ? 'credit' : 'debit';
+        const labels = { deposit: 'Deposit', withdrawal: 'Withdrawal', referral_earning: 'Referral', investment: 'Investment', investment_return: 'ROI Return', daily_bonus: 'Daily Bonus' };
+        list.innerHTML += `<div class="transaction-item"><div class="transaction-left"><div class="transaction-icon ${iconClass}">${isCredit?'📥':'📤'}</div><div class="transaction-info"><h4>${labels[tx.type]||tx.type}</h4><p>${tx.description||formatDate(tx.createdAt)}</p></div></div><div class="transaction-right"><div class="transaction-amount ${isCredit?'credit':'debit'}">${isCredit?'+':'-'}${formatNaira(tx.amount)}</div><span class="transaction-status ${tx.status==='completed'?'completed':'pending'}">${tx.status||'pending'}</span></div></div>`;
+      });
+    } catch (e) { console.error(e); }
+  }
+
+  async function loadNotifications(uid) {
+    try {
+      const q = query(collection(db, 'notifications'), where('uid', '==', uid), orderBy('createdAt', 'desc'));
+      const snap = await getDocs(q);
+      const list = document.getElementById('notificationList');
+      const badge = document.getElementById('notificationBadge');
+      if (snap.empty) { badge.classList.remove('show'); list.innerHTML = '<div class="no-data">No notifications yet</div>'; return; }
+      list.innerHTML = '';
+      let unread = 0, count = 0;
+      snap.forEach(d => {
+        if (count >= 10) return; count++;
+        const n = d.data(); if (!n.read) unread++;
+        list.innerHTML += `<div class="notification-item ${n.read?'':'unread'}">${!n.read?'<div class="notification-dot"></div>':''}<div class="notification-content"><h4>${n.title||'Notification'}</h4><p>${n.message||''}</p><div class="notification-time">${formatDate(n.createdAt)}</div></div></div>`;
+      });
+      if (unread > 0) { badge.textContent = unread > 99 ? '99+' : unread; badge.classList.add('show'); }
+      else { badge.classList.remove('show'); }
+    } catch (e) { console.error(e); }
+  }
+
+  onAuthStateChanged(auth, (user) => {
+    if (user) {
+      currentUser = user;
+      loadUserData(user.uid);
+      onSnapshot(doc(db, 'users', user.uid), (doc) => {
+        if (doc.exists()) {
+          const d = doc.data();
+          originalBalances.deposit = d.depositWallet || 0;
+          originalBalances.withdrawal = d.withdrawalWallet || 0;
+          if (balanceVisible) {
+            document.getElementById('depositBalance').textContent = formatNaira(originalBalances.deposit);
+            document.getElementById('withdrawalBalance').textContent = formatNaira(originalBalances.withdrawal);
+          }
+          document.getElementById('totalDeposits').textContent = formatNaira(d.totalDeposits || 0);
+          document.getElementById('totalWithdrawals').textContent = formatNaira(d.totalWithdrawals || 0);
+          document.getElementById('referralEarnings').textContent = formatNaira(d.referralEarnings || 0);
+          document.getElementById('activeInvestments').textContent = d.activeInvestments || 0;
+          document.getElementById('referralCount').textContent = d.referralCount || 0;
+          document.getElementById('referralEarningsDisplay').textContent = formatNaira(d.referralEarnings || 0);
+          updateBonusButton(d);
+        }
+      });
+      setInterval(() => { if (currentUser) checkAndCreditMaturedInvestments(currentUser.uid); }, 60000);
+    } else {
+      window.location.href = 'login.html';
+    }
+  });
+</script>
+</body>
+</html>
