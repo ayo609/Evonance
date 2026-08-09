@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
+  <title>Evonance – Admin Deposits</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0a0e17; --card: #111827; --card-hover: #1a2332;
+      --primary: #f59e0b; --primary-dark: #d97706; --primary-soft: rgba(245,158,11,0.1);
+      --accent: #fbbf24; --text: #f1f5f9; --muted: #94a3b8; --border: #1e293b;
+      --input-bg: #0f172a; --success: #10b981; --error: #ef4444; --warning: #f59e0b; --info: #3b82f6;
+    }
+    body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); min-height: 100vh; color: var(--text); display: flex; }
+    
+    .sidebar { width: 260px; min-height: 100vh; background: var(--card); border-right: 1px solid var(--border); padding: 20px 0; position: fixed; top: 0; left: 0; bottom: 0; z-index: 100; display: flex; flex-direction: column; overflow-y: auto; }
+    .sidebar-logo { display: flex; align-items: center; gap: 10px; padding: 0 20px 20px; border-bottom: 1px solid var(--border); margin-bottom: 16px; }
+    .sidebar-logo-icon { width: 38px; height: 38px; background: linear-gradient(135deg, var(--primary), #fbbf24); border-radius: 10px; display: flex; align-items: center; justify-content: center; }
+    .sidebar-logo-icon svg { width: 20px; height: 20px; color: #1a1a1a; }
+    .sidebar-brand { font-size: 1.1rem; font-weight: 800; color: var(--text); }
+    .sidebar-brand span { color: var(--primary); }
+    .sidebar-nav { flex: 1; padding: 0 12px; }
+    .sidebar-link { display: flex; align-items: center; gap: 10px; padding: 12px 16px; border-radius: 12px; color: var(--muted); text-decoration: none; font-size: 0.85rem; font-weight: 500; transition: all 0.2s; margin-bottom: 4px; }
+    .sidebar-link:hover { background: var(--card-hover); color: var(--text); }
+    .sidebar-link.active { background: var(--primary-soft); color: var(--primary); font-weight: 600; }
+    .sidebar-link svg { width: 20px; height: 20px; flex-shrink: 0; }
+    .sidebar-link .badge { margin-left: auto; background: var(--error); color: white; font-size: 0.65rem; padding: 2px 8px; border-radius: 50px; font-weight: 700; }
+    .sidebar-footer { padding: 16px 20px 0; border-top: 1px solid var(--border); margin-top: auto; }
+    .sidebar-user { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+    .sidebar-avatar { width: 36px; height: 36px; background: var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.85rem; color: #1a1a1a; }
+    .sidebar-user-info { flex: 1; }
+    .sidebar-user-name { font-size: 0.8rem; font-weight: 600; }
+    .sidebar-user-role { font-size: 0.68rem; color: var(--primary); }
+    .sidebar-logout { display: flex; align-items: center; gap: 8px; padding: 10px 14px; border-radius: 10px; color: #fca5a5; cursor: pointer; font-size: 0.82rem; font-weight: 500; transition: all 0.2s; background: none; border: none; width: 100%; font-family: inherit; }
+    .sidebar-logout:hover { background: rgba(239,68,68,0.1); }
+    .sidebar-logout svg { width: 18px; height: 18px; }
+    
+    .main-content { flex: 1; margin-left: 260px; padding: 24px; }
+    .page-header { margin-bottom: 24px; }
+    .page-title { font-size: 1.5rem; font-weight: 800; letter-spacing: -0.5px; }
+    .page-subtitle { color: var(--muted); font-size: 0.85rem; margin-top: 2px; }
+    
+    .stats-row { display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; margin-bottom: 20px; }
+    .stat-card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 14px; text-align: center; }
+    .stat-value { font-size: 1.2rem; font-weight: 800; }
+    .stat-value.pending { color: var(--warning); }
+    .stat-value.approved { color: var(--success); }
+    .stat-value.rejected { color: var(--error); }
+    .stat-value.total { color: var(--info); }
+    .stat-label { font-size: 0.62rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px; }
+    
+    .tabs { display: flex; gap: 4px; background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 4px; margin-bottom: 20px; }
+    .tab-btn { flex: 1; padding: 10px 16px; border: none; background: transparent; color: var(--muted); font-family: inherit; font-size: 0.85rem; font-weight: 600; cursor: pointer; border-radius: 12px; transition: all 0.3s; text-align: center; }
+    .tab-btn.active { background: var(--primary); color: #1a1a1a; }
+    .tab-btn:hover:not(.active) { background: var(--card-hover); color: var(--text); }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    
+    .deposits-table { width: 100%; background: var(--card); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; }
+    .table-header { display: grid; grid-template-columns: 1.5fr 1fr 0.8fr 1fr 0.8fr 1.5fr; padding: 14px 16px; background: var(--input-bg); font-size: 0.68rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+    .table-row { display: grid; grid-template-columns: 1.5fr 1fr 0.8fr 1fr 0.8fr 1.5fr; padding: 14px 16px; border-bottom: 1px solid var(--border); font-size: 0.78rem; align-items: center; transition: all 0.2s; }
+    .table-row:last-child { border-bottom: none; }
+    .table-row:hover { background: var(--card-hover); }
+    
+    .status-badge { display: inline-block; padding: 4px 10px; border-radius: 50px; font-size: 0.6rem; font-weight: 700; text-transform: uppercase; }
+    .status-badge.pending { background: rgba(245,158,11,0.15); color: var(--warning); }
+    .status-badge.confirmed, .status-badge.approved { background: rgba(16,185,129,0.15); color: var(--success); }
+    .status-badge.rejected { background: rgba(239,68,68,0.15); color: var(--error); }
+    
+    .method-badge { display: inline-block; padding: 2px 8px; border-radius: 50px; font-size: 0.55rem; font-weight: 700; margin-left: 4px; }
+    .method-badge.auto { background: rgba(59,130,246,0.15); color: #60a5fa; }
+    .method-badge.manual { background: rgba(139,92,246,0.15); color: #a78bfa; }
+    
+    .action-btns { display: flex; gap: 5px; flex-wrap: wrap; }
+    .action-btn { padding: 6px 10px; border-radius: 7px; font-family: inherit; font-size: 0.65rem; font-weight: 600; cursor: pointer; transition: all 0.2s; border: none; white-space: nowrap; }
+    .action-btn.approve { background: var(--success); color: white; }
+    .action-btn.approve:hover { background: #059669; }
+    .action-btn.reject { background: var(--error); color: white; }
+    .action-btn.reject:hover { background: #dc2626; }
+    .action-btn.view { background: var(--info); color: white; }
+    .action-btn.view:hover { background: #2563eb; }
+    .action-btn.process { background: var(--warning); color: #1a1a1a; }
+    .action-btn.process:hover { background: #d97706; }
+    
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 300; align-items: center; justify-content: center; padding: 20px; }
+    .modal-overlay.show { display: flex; }
+    .modal { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 28px; max-width: 600px; width: 100%; max-height: 90vh; overflow-y: auto; }
+    .modal h3 { font-size: 1.1rem; margin-bottom: 16px; text-align: center; }
+    .modal img { max-width: 100%; border-radius: 12px; margin: 12px 0; border: 1px solid var(--border); cursor: zoom-in; }
+    .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0; }
+    .info-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 0.82rem; }
+    .info-row.full { grid-column: 1 / -1; }
+    .info-row span:first-child { color: var(--muted); }
+    .info-row span:last-child { font-weight: 600; }
+    .modal-buttons { display: flex; gap: 10px; margin-top: 20px; }
+    .modal-btn { flex: 1; padding: 12px; border-radius: 50px; font-family: inherit; font-size: 0.9rem; font-weight: 700; cursor: pointer; border: none; transition: all 0.2s; }
+    .modal-btn.cancel { background: var(--input-bg); color: var(--text); border: 1px solid var(--border); }
+    .modal-btn.confirm { background: var(--success); color: white; }
+    .modal-btn.danger { background: var(--error); color: white; }
+    .modal-btn.warning { background: var(--warning); color: #1a1a1a; }
+    .form-group { margin-bottom: 14px; }
+    .form-label { display: block; font-size: 0.78rem; font-weight: 600; color: var(--muted); margin-bottom: 6px; }
+    .form-input { width: 100%; height: 46px; background: var(--input-bg); border: 2px solid var(--border); border-radius: 12px; padding: 0 14px; font-family: inherit; font-size: 0.9rem; color: var(--text); outline: none; }
+    
+    .toast { position: fixed; top: 20px; right: 20px; background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 16px 24px; display: flex; align-items: center; gap: 12px; z-index: 1000; transform: translateX(120%); transition: transform 0.5s; box-shadow: 0 20px 40px rgba(0,0,0,0.5); max-width: 380px; }
+    .toast.show { transform: translateX(0); }
+    .toast.success { border-left: 4px solid var(--success); }
+    .toast-icon { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+    .toast.success .toast-icon { background: rgba(16,185,129,0.15); }
+    .toast-icon svg { width: 20px; height: 20px; color: var(--success); }
+    .toast-content h4 { font-size: 0.9rem; font-weight: 700; }
+    .toast-content p { font-size: 0.75rem; color: var(--muted); }
+    .no-data { text-align: center; padding: 40px; color: var(--muted); font-size: 0.85rem; }
+    .highlight { color: var(--success); font-weight: 600; }
+    .danger-text { color: var(--error); }
+    .info-text { color: #60a5fa; }
+    
+    .refresh-btn { background: var(--card); border: 1px solid var(--border); color: var(--text); padding: 8px 16px; border-radius: 50px; font-family: inherit; font-size: 0.8rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; }
+    .refresh-btn:hover { background: var(--card-hover); }
+    
+    @media (max-width: 768px) { .sidebar { display: none; } .main-content { margin-left: 0; } .table-header, .table-row { grid-template-columns: 1fr 0.7fr 0.7fr 1fr; } .stats-row { grid-template-columns: repeat(2,1fr); } .info-grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="sidebar-logo"><div class="sidebar-logo-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg></div><span class="sidebar-brand">Ev<span>onance</span></span></div>
+  <nav class="sidebar-nav">
+    <a href="admin-dashboard.html" class="sidebar-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Dashboard</a>
+    <a href="admin-users.html" class="sidebar-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>Users</a>
+    <a href="admin-deposits.html" class="sidebar-link active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>Deposits <span class="badge" id="pendingBadge">0</span></a>
+    <a href="admin-withdrawals.html" class="sidebar-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="12" y1="10" x2="12" y2="18"/><polyline points="9 15 12 18 15 15"/></svg>Withdrawals</a>
+    <a href="admin-investments.html" class="sidebar-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Investments</a>
+    <a href="admin-notifications.html" class="sidebar-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>Notifications</a>
+    <a href="admin-settings.html" class="sidebar-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>Settings</a>
+  </nav>
+  <div class="sidebar-footer"><div class="sidebar-user"><div class="sidebar-avatar">A</div><div class="sidebar-user-info"><div class="sidebar-user-name">Admin</div><div class="sidebar-user-role">Administrator</div></div></div><button class="sidebar-logout" onclick="handleLogout()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>Logout</button></div>
+</aside>
+
+<main class="main-content">
+  <div class="page-header" style="display:flex;justify-content:space-between;align-items:center;">
+    <div>
+      <h1 class="page-title">Deposit Management</h1>
+      <p class="page-subtitle">Approve deposits & process NekPayment transactions</p>
+    </div>
+    <button class="refresh-btn" onclick="loadDeposits()">🔄 Refresh</button>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-row">
+    <div class="stat-card"><div class="stat-value pending" id="statPending">0</div><div class="stat-label">Pending</div></div>
+    <div class="stat-card"><div class="stat-value approved" id="statApproved">0</div><div class="stat-label">Approved</div></div>
+    <div class="stat-card"><div class="stat-value rejected" id="statRejected">0</div><div class="stat-label">Rejected</div></div>
+    <div class="stat-card"><div class="stat-value total" id="statTotal">₦0</div><div class="stat-label">Total Value</div></div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('pending')">🟡 Pending</button>
+    <button class="tab-btn" onclick="switchTab('approved')">✅ Approved</button>
+    <button class="tab-btn" onclick="switchTab('rejected')">❌ Rejected</button>
+  </div>
+
+  <div class="tab-content active" id="tab-pending">
+    <div class="deposits-table">
+      <div class="table-header"><span>User</span><span>Amount</span><span>Method</span><span>Date</span><span>Status</span><span>Actions</span></div>
+      <div id="pendingList"><div class="no-data">Loading...</div></div>
+    </div>
+  </div>
+  <div class="tab-content" id="tab-approved">
+    <div class="deposits-table">
+      <div class="table-header"><span>User</span><span>Amount</span><span>Method</span><span>Date</span><span>Status</span><span>Actions</span></div>
+      <div id="approvedList"><div class="no-data">Loading...</div></div>
+    </div>
+  </div>
+  <div class="tab-content" id="tab-rejected">
+    <div class="deposits-table">
+      <div class="table-header"><span>User</span><span>Amount</span><span>Method</span><span>Date</span><span>Status</span><span>Actions</span></div>
+      <div id="rejectedList"><div class="no-data">Loading...</div></div>
+    </div>
+  </div>
+</main>
+
+<!-- Detail Modal -->
+<div class="modal-overlay" id="detailsModal">
+  <div class="modal">
+    <h3>📋 Deposit Details</h3>
+    <div class="info-grid" id="depositDetails"></div>
+    <img id="detailsScreenshot" src="" style="width:100%;border-radius:12px;margin-top:12px;display:none;cursor:zoom-in;" onclick="this.style.transform = this.style.transform === 'scale(1.5)' ? 'scale(1)' : 'scale(1.5)'" />
+    <div class="modal-buttons" id="detailsActions"></div>
+  </div>
+</div>
+
+<!-- Reject Modal -->
+<div class="modal-overlay" id="rejectModal">
+  <div class="modal" style="max-width:420px;">
+    <h3>❌ Reject Deposit</h3>
+    <div class="form-group"><label class="form-label">Reason</label><input type="text" class="form-input" id="rejectReason" placeholder="Enter reason for rejection" /></div>
+    <div class="modal-buttons"><button class="modal-btn cancel" onclick="closeRejectModal()">Cancel</button><button class="modal-btn danger" onclick="confirmReject()">Reject</button></div>
+  </div>
+</div>
+
+<!-- Process NekPayment Modal -->
+<div class="modal-overlay" id="processModal">
+  <div class="modal" style="max-width:450px;">
+    <h3>⚡ Process NekPayment</h3>
+    <p style="text-align:center;color:var(--muted);margin-bottom:16px;">Verify this payment in your NekPayment dashboard, then click process to credit the user's wallet.</p>
+    <div class="info-grid" id="processDetails"></div>
+    <div class="modal-buttons"><button class="modal-btn cancel" onclick="closeProcessModal()">Cancel</button><button class="modal-btn warning" onclick="processNekPayment()">✅ Process & Credit</button></div>
+  </div>
+</div>
+
+<div class="toast success" id="toast"><div class="toast-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div><div class="toast-content"><h4>Success</h4><p id="toastMsg"></p></div></div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+  import { getFirestore, doc, getDoc, updateDoc, collection, query, orderBy, getDocs, serverTimestamp, increment, addDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+  const firebaseConfig = { apiKey: "AIzaSyDT0ACobk5YMFgrqxb-VOnfELXTyssrOtA", authDomain: "newpro-d830e.firebaseapp.com", projectId: "newpro-d830e", storageBucket: "newpro-d830e.firebasestorage.app", messagingSenderId: "642315724384", appId: "1:642315724384:web:19def936898718e9300505" };
+  const app = initializeApp(firebaseConfig); const auth = getAuth(app); const db = getFirestore(app);
+
+  let currentRejectId = null, currentProcessId = null, allDeposits = [], currentTab = 'pending';
+
+  function showToast(msg) { const t = document.getElementById('toast'); document.getElementById('toastMsg').textContent = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 3000); }
+  function formatNaira(a) { return '₦' + Number(a).toLocaleString('en-NG', { minimumFractionDigits: 2 }); }
+  function formatDate(ts) { if(!ts) return 'N/A'; const d = ts.toDate?ts.toDate():new Date(ts); return d.toLocaleDateString('en-NG',{month:'short',day:'numeric'}) + ' ' + d.toLocaleTimeString('en-NG',{hour:'2-digit',minute:'2-digit'}); }
+  function maskEmail(e) { if(!e) return ''; const p = e.split('@'); return p[0].substring(0,4)+'***@'+p[1]; }
+
+  window.handleLogout = async () => { await signOut(auth); window.location.href = 'admin-login.html'; };
+
+  window.switchTab = (tab) => {
+    currentTab = tab;
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    if(tab==='pending') { document.querySelector('.tab-btn:nth-child(1)').classList.add('active'); document.getElementById('tab-pending').classList.add('active'); }
+    else if(tab==='approved') { document.querySelector('.tab-btn:nth-child(2)').classList.add('active'); document.getElementById('tab-approved').classList.add('active'); }
+    else { document.querySelector('.tab-btn:nth-child(3)').classList.add('active'); document.getElementById('tab-rejected').classList.add('active'); }
+    renderAllLists();
+  };
+
+  async function loadDeposits() {
+    try {
+      const q = query(collection(db, 'deposits'), orderBy('createdAt', 'desc'));
+      const snap = await getDocs(q);
+      allDeposits = [];
+      snap.forEach(doc => allDeposits.push({ id: doc.id, ...doc.data() }));
+      updateStats();
+      renderAllLists();
+    } catch(e) { console.error(e); }
+  }
+
+  function updateStats() {
+    const pending = allDeposits.filter(d => d.status==='pending');
+    const approved = allDeposits.filter(d => d.status==='confirmed'||d.status==='approved');
+    const rejected = allDeposits.filter(d => d.status==='rejected');
+    document.getElementById('statPending').textContent = pending.length;
+    document.getElementById('statApproved').textContent = approved.length;
+    document.getElementById('statRejected').textContent = rejected.length;
+    document.getElementById('statTotal').textContent = formatNaira(allDeposits.reduce((s,d) => s+(d.amount||0), 0));
+    document.getElementById('pendingBadge').textContent = pending.length;
+    document.getElementById('pendingBadge').style.display = pending.length===0?'none':'inline';
+  }
+
+  function renderAllLists() {
+    const pending = allDeposits.filter(d => d.status==='pending');
+    const approved = allDeposits.filter(d => d.status==='confirmed'||d.status==='approved');
+    const rejected = allDeposits.filter(d => d.status==='rejected');
+    renderList('pendingList', pending, true);
+    renderList('approvedList', approved, false);
+    renderList('rejectedList', rejected, false);
+  }
+
+  function renderList(listId, items, showActions) {
+    const list = document.getElementById(listId);
+    if(items.length===0) { list.innerHTML='<div class="no-data">No deposits found</div>'; return; }
+    list.innerHTML = items.map(d => {
+      const isAuto = d.method === 'nekpayment';
+      const isPending = d.status === 'pending';
+      const isApproved = d.status === 'confirmed' || d.status === 'approved';
+      return `
+      <div class="table-row">
+        <span><div style="font-weight:600;">${d.fullName||maskEmail(d.email||'')}</div><div style="font-size:0.62rem;color:var(--muted);">${d.email||''}</div></span>
+        <span style="font-weight:700;">${formatNaira(d.amount)}</span>
+        <span><span class="method-badge ${isAuto?'auto':'manual'}">${isAuto?'Auto':'Manual'}</span></span>
+        <span style="font-size:0.7rem;">${formatDate(d.createdAt)}</span>
+        <span><span class="status-badge ${isApproved?'confirmed':d.status==='rejected'?'rejected':'pending'}">${d.status}</span></span>
+        <span class="action-btns">
+          <button class="action-btn view" onclick="viewDetails('${d.id}')">📋</button>
+          ${d.receiptBase64 ? `<button class="action-btn view" onclick="viewReceipt('${d.id}')">📸</button>` : ''}
+          ${isPending && isAuto ? `<button class="action-btn process" onclick="openProcessModal('${d.id}')">⚡ Process</button>` : ''}
+          ${isPending && !isAuto ? `<button class="action-btn approve" onclick="approveDeposit('${d.id}')">✅</button><button class="action-btn reject" onclick="openRejectModal('${d.id}')">❌</button>` : ''}
+        </span>
+      </div>`;
+    }).join('');
+  }
+
+  window.viewReceipt = async (id) => {
+    const snap = await getDoc(doc(db, 'deposits', id));
+    if(!snap.exists()) return;
+    document.getElementById('detailsScreenshot').src = snap.data().receiptBase64 || '';
+    document.getElementById('detailsScreenshot').style.display = 'block';
+    document.getElementById('detailsModal').classList.add('show');
+    document.getElementById('depositDetails').innerHTML = '<div class="info-row full"><span>Receipt Screenshot</span></div>';
+    document.getElementById('detailsActions').innerHTML = '<button class="modal-btn cancel" onclick="closeDetailsModal()">Close</button>';
+  };
+
+  window.viewDetails = async (id) => {
+    const snap = await getDoc(doc(db, 'deposits', id));
+    if(!snap.exists()) return;
+    const d = snap.data();
+    const isAuto = d.method === 'nekpayment';
+    document.getElementById('depositDetails').innerHTML = `
+      <div class="info-row"><span>Full Name</span><span>${d.fullName||'N/A'}</span></div>
+      <div class="info-row"><span>Email</span><span>${d.email||'N/A'}</span></div>
+      <div class="info-row"><span>Amount</span><span class="highlight">${formatNaira(d.amount)}</span></div>
+      <div class="info-row"><span>Method</span><span class="${isAuto?'info-text':''}">${isAuto?'⚡ NekPayment (Auto)':'📸 Manual'}</span></div>
+      ${!isAuto ? `<div class="info-row"><span>Bank</span><span>${d.bankName||'N/A'}</span></div><div class="info-row"><span>Account</span><span>${d.bankAccount||'N/A'}</span></div>` : ''}
+      ${d.reference ? `<div class="info-row full"><span>Reference</span><span style="font-size:0.75rem;">${d.reference}</span></div>` : ''}
+      <div class="info-row"><span>Status</span><span>${d.status||'pending'}</span></div>
+      <div class="info-row"><span>Submitted</span><span>${formatDate(d.createdAt)}</span></div>
+      ${d.confirmedAt ? `<div class="info-row"><span>Processed</span><span>${formatDate(d.confirmedAt)}</span></div>` : ''}
+      ${d.rejectReason ? `<div class="info-row full"><span>Reject Reason</span><span class="danger-text">${d.rejectReason}</span></div>` : ''}
+    `;
+    const img = document.getElementById('detailsScreenshot');
+    if(d.receiptBase64) { img.src = d.receiptBase64; img.style.display = 'block'; img.style.transform = 'scale(1)'; }
+    else { img.style.display = 'none'; }
+    
+    const actions = document.getElementById('detailsActions');
+    if(d.status==='pending') {
+      if(isAuto) {
+        actions.innerHTML = `<button class="modal-btn cancel" onclick="closeDetailsModal()">Close</button><button class="modal-btn warning" onclick="closeDetailsModal();openProcessModal('${d.id}')">⚡ Process NekPayment</button>`;
+      } else {
+        actions.innerHTML = `<button class="modal-btn danger" onclick="openRejectModal('${d.id}');closeDetailsModal();">❌ Reject</button><button class="modal-btn confirm" onclick="approveDeposit('${d.id}');closeDetailsModal();">✅ Approve</button>`;
+      }
+    } else {
+      actions.innerHTML = `<button class="modal-btn cancel" onclick="closeDetailsModal()">Close</button>`;
+    }
+    document.getElementById('detailsModal').classList.add('show');
+  };
+  window.closeDetailsModal = () => document.getElementById('detailsModal').classList.remove('show');
+
+  // Approve Manual Deposit
+  window.approveDeposit = async (depId) => {
+    try {
+      const snap = await getDoc(doc(db, 'deposits', depId)); const d = snap.data();
+      await updateDoc(doc(db, 'deposits', depId), { status: 'confirmed', confirmedAt: serverTimestamp() });
+      await updateDoc(doc(db, 'users', d.uid), { depositWallet: increment(d.amount), totalDeposits: increment(d.amount) });
+      await addDoc(collection(db, 'transactions'), { uid: d.uid, type: 'deposit', amount: d.amount, status: 'completed', createdAt: serverTimestamp(), description: 'Deposit approved by admin' });
+      await addDoc(collection(db, 'notifications'), { uid: d.uid, title: '✅ Deposit Approved!', message: `Your deposit of ${formatNaira(d.amount)} has been approved and credited.`, type: 'deposit', read: false, createdAt: serverTimestamp() });
+      showToast('Deposit approved & credited!'); loadDeposits();
+    } catch(e) { showToast('Error approving deposit'); }
+  };
+
+  // Process NekPayment (Auto Deposit)
+  window.openProcessModal = (id) => {
+    currentProcessId = id;
+    const d = allDeposits.find(x => x.id === id);
+    if(!d) return;
+    document.getElementById('processDetails').innerHTML = `
+      <div class="info-row"><span>User</span><span>${d.fullName||d.email}</span></div>
+      <div class="info-row"><span>Amount</span><span class="highlight">${formatNaira(d.amount)}</span></div>
+      <div class="info-row"><span>Reference</span><span>${d.reference||'N/A'}</span></div>
+      <div class="info-row"><span>Status</span><span>Awaiting processing</span></div>
+    `;
+    document.getElementById('processModal').classList.add('show');
+  };
+  window.closeProcessModal = () => { document.getElementById('processModal').classList.remove('show'); currentProcessId = null; };
+  
+  window.processNekPayment = async () => {
+    if(!currentProcessId) return;
+    try {
+      const snap = await getDoc(doc(db, 'deposits', currentProcessId)); const d = snap.data();
+      await updateDoc(doc(db, 'deposits', currentProcessId), { status: 'confirmed', walletCredited: true, confirmedAt: serverTimestamp() });
+      await updateDoc(doc(db, 'users', d.uid), { depositWallet: increment(d.amount), totalDeposits: increment(d.amount) });
+      await addDoc(collection(db, 'transactions'), { uid: d.uid, type: 'deposit', amount: d.amount, status: 'completed', createdAt: serverTimestamp(), description: 'NekPayment deposit processed' });
+      await addDoc(collection(db, 'notifications'), { uid: d.uid, title: '✅ Deposit Processed!', message: `Your NekPayment deposit of ${formatNaira(d.amount)} has been processed and credited.`, type: 'deposit', read: false, createdAt: serverTimestamp() });
+      closeProcessModal();
+      showToast('NekPayment processed & wallet credited!'); loadDeposits();
+    } catch(e) { showToast('Error processing payment'); }
+  };
+
+  // Reject
+  window.openRejectModal = (id) => { currentRejectId = id; document.getElementById('rejectModal').classList.add('show'); };
+  window.closeRejectModal = () => { document.getElementById('rejectModal').classList.remove('show'); currentRejectId = null; };
+  window.confirmReject = async () => {
+    if(!currentRejectId) return;
+    const reason = document.getElementById('rejectReason').value || 'No reason';
+    try {
+      const snap = await getDoc(doc(db, 'deposits', currentRejectId)); const d = snap.data();
+      await updateDoc(doc(db, 'deposits', currentRejectId), { status: 'rejected', rejectReason: reason });
+      await addDoc(collection(db, 'notifications'), { uid: d.uid, title: '❌ Deposit Rejected', message: `Your deposit of ${formatNaira(d.amount)} was rejected. Reason: ${reason}`, type: 'deposit', read: false, createdAt: serverTimestamp() });
+      closeRejectModal(); document.getElementById('rejectReason').value = '';
+      showToast('Deposit rejected'); loadDeposits();
+    } catch(e) { showToast('Error rejecting deposit'); }
+  };
+
+  onAuthStateChanged(auth, async (u) => {
+    if(u) { const ad = await getDoc(doc(db, 'adminUsers', u.uid)); if(ad.exists()&&ad.data().role==='admin') loadDeposits(); else window.location.href='admin-login.html'; }
+    else window.location.href = 'admin-login.html';
+  });
+</script>
+</body>
+</html>
