@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Payment Processing - Evonance</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: #0a0f1a;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #f1f5f9;
+      padding: 20px;
+      text-align: center;
+    }
+    .container {
+      background: rgba(17, 25, 40, 0.9);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 24px;
+      padding: 40px 30px;
+      max-width: 450px;
+      width: 100%;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    }
+    .loader {
+      width: 56px; height: 56px;
+      border: 4px solid #1e293b;
+      border-top-color: #10b981;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 20px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .icon { font-size: 4rem; margin-bottom: 16px; }
+    h2 { font-size: 1.3rem; font-weight: 800; margin-bottom: 8px; letter-spacing: -0.5px; }
+    p { color: #94a3b8; font-size: 0.9rem; line-height: 1.5; margin-bottom: 20px; }
+    .reference {
+      background: rgba(16, 185, 129, 0.08);
+      border: 1px solid rgba(16, 185, 129, 0.2);
+      border-radius: 12px;
+      padding: 10px 16px;
+      font-size: 0.8rem;
+      color: #34d399;
+      margin-bottom: 16px;
+      word-break: break-all;
+    }
+    .btn {
+      display: inline-block;
+      padding: 12px 28px;
+      border-radius: 50px;
+      font-family: inherit;
+      font-size: 0.9rem;
+      font-weight: 700;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all 0.3s;
+      border: none;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, #10b981, #059669);
+      color: white;
+      box-shadow: 0 4px 20px rgba(16, 185, 129, 0.3);
+    }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(16, 185, 129, 0.4); }
+    .btn-secondary {
+      background: rgba(59, 130, 246, 0.15);
+      border: 1px solid rgba(59, 130, 246, 0.3);
+      color: #60a5fa;
+      margin-left: 10px;
+    }
+    .status-badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 50px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+    }
+    .status-badge.success { background: rgba(16, 185, 129, 0.15); color: #10b981; }
+    .status-badge.failed { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
+    .status-badge.pending { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <div class="loader" id="loader"></div>
+  <div class="icon" id="statusIcon">⏳</div>
+  <span class="status-badge pending" id="statusBadge">Processing</span>
+  <h2 id="statusTitle">Confirming Payment...</h2>
+  <p id="statusMessage">This can take a few seconds while we verify your payment.</p>
+  <div class="reference" id="referenceDisplay" style="display:none;"></div>
+  <div>
+    <button class="btn btn-primary" id="actionBtn" onclick="goToTransactions()" style="display:none;">📋 View Transactions</button>
+    <button class="btn btn-secondary" id="retryBtn" onclick="goToDeposit()" style="display:none;">🔄 Try Again</button>
+  </div>
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getFirestore, collection, query, where, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyDT0ACobk5YMFgrqxb-VOnfELXTyssrOtA",
+    authDomain: "newpro-d830e.firebaseapp.com",
+    projectId: "newpro-d830e",
+    storageBucket: "newpro-d830e.firebasestorage.app",
+    messagingSenderId: "642315724384",
+    appId: "1:642315724384:web:19def936898718e9300505"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  function showResult(icon, badgeClass, badgeText, title, message, showTransactions, showRetry) {
+    document.getElementById('loader').style.display = 'none';
+    document.getElementById('statusIcon').textContent = icon;
+    document.getElementById('statusBadge').className = 'status-badge ' + badgeClass;
+    document.getElementById('statusBadge').textContent = badgeText;
+    document.getElementById('statusTitle').textContent = title;
+    document.getElementById('statusMessage').textContent = message;
+    if (showTransactions) document.getElementById('actionBtn').style.display = 'inline-block';
+    if (showRetry) document.getElementById('retryBtn').style.display = 'inline-block';
+  }
+
+  window.goToTransactions = function() { window.location.href = 'transactions.html'; };
+  window.goToDeposit = function() { window.location.href = 'deposit.html'; };
+
+  const urlParams = new URLSearchParams(window.location.search);
+  const reference = urlParams.get('mchOrderNo') || urlParams.get('order_id') || urlParams.get('reference');
+
+  if (!reference) {
+    showResult('⚠️', 'pending', 'Unknown', 'No Reference Found',
+      'Could not identify your payment. Please check your transactions page.', true, false);
+  } else {
+    document.getElementById('referenceDisplay').textContent = 'Ref: ' + reference;
+    document.getElementById('referenceDisplay').style.display = 'block';
+
+    // This page NEVER credits the wallet itself. It only reads whatever status
+    // the server-side webhook (api/nekpay-webhook.js) has already written to Firestore
+    // after verifying NekPayment's signature. This closes the "fake success URL" exploit.
+    const depQuery = query(collection(db, 'deposits'), where('reference', '==', reference));
+
+    let attempts = 0;
+    const maxAttempts = 20; // ~40 seconds of polling for the webhook to land
+
+    const unsubscribe = onSnapshot(depQuery, (snapshot) => {
+      if (snapshot.empty) return;
+      const data = snapshot.docs[0].data();
+
+      if (data.status === 'confirmed') {
+        unsubscribe();
+        showResult('✅', 'success', 'Confirmed', 'Payment Confirmed! 🎉',
+          `Your deposit of ₦${Number(data.amount).toLocaleString()} has been credited to your wallet.`, true, false);
+        setTimeout(() => window.location.href = 'transactions.html', 3000);
+      } else if (data.status === 'failed') {
+        unsubscribe();
+        showResult('❌', 'failed', 'Failed', 'Payment Failed',
+          'Your payment was not successful. Please try again.', false, true);
+      }
+      // else: still "pending" — keep waiting for the webhook
+    });
+
+    const pollInterval = setInterval(() => {
+      attempts++;
+      if (attempts >= maxAttempts) {
+        clearInterval(pollInterval);
+        showResult('⏳', 'pending', 'Processing', 'Still Processing',
+          'Your payment is taking longer than expected to confirm. Check your transactions page shortly — you do not need to pay again.', true, false);
+      }
+    }, 2000);
+  }
+</script>
+</body>
+</html>
