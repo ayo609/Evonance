@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
+  <title>Evonance – Withdraw</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0f172a; --card: #1e293b; --card-hover: #334155; --primary: #10b981;
+      --primary-dark: #059669; --primary-soft: rgba(16,185,129,0.1); --accent: #34d399;
+      --text: #f1f5f9; --muted: #94a3b8; --border: #334155; --input-bg: #0f172a;
+      --success: #10b981; --error: #ef4444; --warning: #f59e0b; --info: #3b82f6; --purple: #8b5cf6;
+    }
+    body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); min-height: 100vh; color: var(--text); padding-bottom: 80px; }
+
+    .toast { position: fixed; top: 20px; left: 20px; background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 16px 24px; display: flex; align-items: center; gap: 12px; z-index: 1000; transform: translateX(-120%); transition: transform 0.5s cubic-bezier(0.68,-0.55,0.27,1.55); box-shadow: 0 20px 40px rgba(0,0,0,0.3); max-width: 400px; }
+    .toast.show { transform: translateX(0); }
+    .toast.success { border-left: 4px solid var(--success); }
+    .toast.error { border-left: 4px solid var(--error); }
+    .toast.warning { border-left: 4px solid var(--warning); }
+    .toast-icon { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .toast.success .toast-icon { background: rgba(16,185,129,0.15); }
+    .toast-icon svg { width: 24px; height: 24px; }
+    .toast.success .toast-icon svg { color: var(--success); }
+    .toast-content h4 { font-size: 0.95rem; font-weight: 700; color: var(--text); margin-bottom: 2px; }
+    .toast-content p { font-size: 0.8rem; color: var(--muted); line-height: 1.3; }
+
+    .header { background: var(--card); border-bottom: 1px solid var(--border); padding: 16px 20px; position: sticky; top: 0; z-index: 100; }
+    .header-content { display: flex; align-items: center; justify-content: space-between; max-width: 800px; margin: 0 auto; }
+    .header-left { display: flex; align-items: center; gap: 12px; }
+    .back-btn { background: none; border: none; color: var(--muted); cursor: pointer; padding: 8px; border-radius: 10px; display: flex; transition: all 0.2s; text-decoration: none; }
+    .back-btn:hover { background: var(--card-hover); color: var(--text); }
+    .back-btn svg { width: 24px; height: 24px; }
+    .header-title { font-size: 1.2rem; font-weight: 800; }
+    .balance-badge { background: rgba(16,185,129,0.15); border: 1px solid rgba(16,185,129,0.3); border-radius: 50px; padding: 6px 14px; font-size: 0.8rem; font-weight: 700; color: var(--accent); }
+
+    .main-content { max-width: 600px; margin: 0 auto; padding: 20px; display: flex; flex-direction: column; gap: 20px; }
+
+    .status-banner { border-radius: 16px; padding: 16px 20px; display: flex; align-items: center; gap: 12px; font-weight: 600; }
+    .status-banner.open { background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.3); color: var(--success); }
+    .status-banner.closed { background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3); color: var(--error); }
+    .status-banner svg { width: 24px; height: 24px; flex-shrink: 0; }
+    .status-banner-content h4 { font-size: 0.9rem; margin-bottom: 2px; }
+    .status-banner-content p { font-size: 0.75rem; opacity: 0.8; font-weight: 400; }
+
+    .requirements-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 16px; }
+    .requirement-item { display: flex; align-items: center; gap: 10px; padding: 8px 0; font-size: 0.82rem; }
+    .requirement-item:not(:last-child) { border-bottom: 1px solid var(--border); }
+    .requirement-icon { width: 28px; height: 28px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; flex-shrink: 0; }
+    .requirement-icon.met { background: rgba(16,185,129,0.15); }
+    .requirement-icon.unmet { background: rgba(239,68,68,0.15); }
+    .requirement-text { flex: 1; }
+    .requirement-status { font-weight: 700; font-size: 0.75rem; }
+    .requirement-status.met { color: var(--success); }
+    .requirement-status.unmet { color: var(--error); }
+
+    .info-row { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+    .info-card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 14px; text-align: center; }
+    .info-card .info-value { font-size: 1rem; font-weight: 700; color: var(--text); margin-bottom: 2px; }
+    .info-card .info-label { font-size: 0.68rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+
+    .form-card { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 24px; }
+    .form-card h3 { font-size: 1.1rem; font-weight: 700; margin-bottom: 20px; display: flex; align-items: center; gap: 8px; }
+    .form-card h3 svg { width: 22px; height: 22px; color: var(--primary); }
+
+    .form-group { margin-bottom: 16px; }
+    .form-label { display: block; font-size: 0.8rem; font-weight: 600; color: var(--muted); margin-bottom: 6px; }
+    .form-input { width: 100%; height: 50px; background: var(--input-bg); border: 2px solid var(--border); border-radius: 14px; padding: 0 16px; font-family: inherit; font-size: 0.9rem; color: var(--text); outline: none; transition: all 0.3s; }
+    .form-input:focus { border-color: var(--primary); box-shadow: 0 0 0 4px var(--primary-soft); }
+    .form-input.error { border-color: var(--error); }
+    .form-input:disabled { opacity: 0.5; cursor: not-allowed; }
+    .form-input::placeholder { color: #64748b; }
+    select.form-input { appearance: none; cursor: pointer; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%2394a3b8' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 16px center; padding-right: 40px; }
+
+    .verify-status { font-size: 0.72rem; margin-top: 4px; display: flex; align-items: center; gap: 6px; }
+    .verify-status.verifying { color: var(--warning); }
+    .verify-status.success { color: var(--success); }
+    .verify-status.error { color: var(--error); }
+    .verify-status svg { width: 14px; height: 14px; }
+    .spinner-small { width: 14px; height: 14px; border: 2px solid rgba(245,158,11,0.3); border-top-color: var(--warning); border-radius: 50%; animation: spin 0.6s linear infinite; display: inline-block; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .pin-inputs { display: flex; gap: 10px; justify-content: center; }
+    .pin-input { width: 55px; height: 60px; background: var(--input-bg); border: 2px solid var(--border); border-radius: 14px; text-align: center; font-family: inherit; font-size: 1.5rem; font-weight: 700; color: var(--text); outline: none; transition: all 0.3s; }
+    .pin-input:focus { border-color: var(--primary); box-shadow: 0 0 0 4px var(--primary-soft); }
+
+    .error-message { font-size: 0.75rem; color: var(--error); margin-top: 4px; display: none; }
+    .error-message.show { display: block; }
+
+    .summary-box { background: var(--input-bg); border: 1px solid var(--border); border-radius: 14px; padding: 16px; margin-top: 20px; }
+    .summary-row { display: flex; justify-content: space-between; padding: 8px 0; font-size: 0.85rem; border-bottom: 1px solid var(--border); }
+    .summary-row:last-child { border-bottom: none; }
+    .summary-row span:first-child { color: var(--muted); }
+    .summary-row span:last-child { font-weight: 600; }
+    .summary-row .fee { color: var(--error); }
+    .summary-row .net { color: var(--success); font-size: 1rem; }
+
+    .submit-btn { width: 100%; height: 52px; background: linear-gradient(135deg, var(--primary), var(--primary-dark)); color: white; font-family: inherit; font-size: 1rem; font-weight: 700; border: none; border-radius: 50px; cursor: pointer; margin-top: 20px; transition: all 0.3s; display: flex; align-items: center; justify-content: center; gap: 8px; }
+    .submit-btn:hover:not(:disabled) { box-shadow: 0 10px 30px rgba(16,185,129,0.4); transform: translateY(-2px); }
+    .submit-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .spinner { width: 20px; height: 20px; border: 2.5px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; animation: spin 0.6s linear infinite; display: none; }
+
+    .pin-setup-card { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 32px 24px; text-align: center; }
+    .pin-setup-card .pin-icon { width: 64px; height: 64px; background: rgba(139,92,246,0.15); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; font-size: 2rem; }
+    .pin-setup-card h3 { font-size: 1.2rem; margin-bottom: 8px; }
+    .pin-setup-card p { font-size: 0.85rem; color: var(--muted); margin-bottom: 24px; }
+
+    .disabled-overlay { position: relative; }
+    .disabled-overlay::after { content: '⚠️ You need an active investment to withdraw'; position: absolute; inset: 0; background: rgba(15,23,42,0.8); display: flex; align-items: center; justify-content: center; border-radius: 20px; font-weight: 700; color: var(--warning); font-size: 0.9rem; text-align: center; padding: 20px; z-index: 10; pointer-events: none; }
+
+    .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: var(--card); border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: space-around; padding: 8px 0 12px; z-index: 100; }
+    .nav-item { display: flex; flex-direction: column; align-items: center; gap: 4px; text-decoration: none; color: var(--muted); font-size: 0.68rem; font-weight: 600; padding: 4px 12px; border-radius: 12px; }
+    .nav-item.active { color: var(--primary); }
+    .nav-item svg { width: 24px; height: 24px; }
+
+    @media (max-width: 480px) { .main-content { padding: 16px; gap: 16px; } .info-row { grid-template-columns: 1fr 1fr; } .pin-input { width: 48px; height: 52px; font-size: 1.3rem; } }
+  </style>
+</head>
+<body>
+
+<div class="toast success" id="toast"><div class="toast-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div><div class="toast-content"><h4 id="toastTitle">Success</h4><p id="toastMessage"></p></div></div>
+
+<header class="header">
+  <div class="header-content">
+    <div class="header-left"><a href="dashboard.html" class="back-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg></a><span class="header-title">Withdraw Funds</span></div>
+    <div class="balance-badge" id="headerBalance">₦0.00</div>
+  </div>
+</header>
+
+<main class="main-content">
+
+  <div class="status-banner open" id="statusBanner">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+    <div class="status-banner-content"><h4 id="statusTitle">Withdrawals Open</h4><p id="statusMessage">8:00 AM - 5:00 PM (Mon-Sat)</p></div>
+  </div>
+
+  <div class="requirements-card">
+    <div class="requirement-item"><div class="requirement-icon met" id="reqTimeIcon">✅</div><span class="requirement-text">Within withdrawal hours (8AM-5PM, Mon-Sat)</span><span class="requirement-status met" id="reqTimeStatus">OK</span></div>
+    <div class="requirement-item"><div class="requirement-icon met" id="reqDailyIcon">✅</div><span class="requirement-text">Not withdrawn today (once per day)</span><span class="requirement-status met" id="reqDailyStatus">OK</span></div>
+    <div class="requirement-item"><div class="requirement-icon unmet" id="reqInvestmentIcon">❌</div><span class="requirement-text">Must have at least 1 active investment</span><span class="requirement-status unmet" id="reqInvestmentStatus">Required</span></div>
+    <div class="requirement-item"><div class="requirement-icon met" id="reqPinIcon">✅</div><span class="requirement-text">Withdrawal PIN is set</span><span class="requirement-status met" id="reqPinStatus">OK</span></div>
+    <div class="requirement-item"><div class="requirement-icon met" id="reqBalanceIcon">✅</div><span class="requirement-text">Minimum ₦3,000 in Withdrawal Wallet</span><span class="requirement-status met" id="reqBalanceStatus">OK</span></div>
+  </div>
+
+  <div class="info-row">
+    <div class="info-card"><div class="info-value">₦3,000</div><div class="info-label">Minimum</div></div>
+    <div class="info-card"><div class="info-value">8%</div><div class="info-label">Fee</div></div>
+    <div class="info-card"><div class="info-value">1/Day</div><div class="info-label">Frequency</div></div>
+    <div class="info-card"><div class="info-value">Mon-Sat</div><div class="info-label">Available</div></div>
+  </div>
+
+  <div class="pin-setup-card" id="pinSetupCard" style="display:none;">
+    <div class="pin-icon">🔐</div><h3>Set Up Withdrawal PIN</h3><p>Create a 4-digit PIN to secure your withdrawals.</p>
+    <div class="pin-inputs" style="margin-bottom:16px;"><input type="password" class="pin-input" id="pin1" maxlength="1" oninput="handlePinInput(this,'pin2')" /><input type="password" class="pin-input" id="pin2" maxlength="1" oninput="handlePinInput(this,'pin3')" /><input type="password" class="pin-input" id="pin3" maxlength="1" oninput="handlePinInput(this,'pin4')" /><input type="password" class="pin-input" id="pin4" maxlength="1" /></div>
+    <p style="font-size:0.75rem;color:var(--muted);margin-bottom:16px;">Confirm PIN</p>
+    <div class="pin-inputs" style="margin-bottom:16px;"><input type="password" class="pin-input" id="confirmPin1" maxlength="1" oninput="handlePinInput(this,'confirmPin2')" /><input type="password" class="pin-input" id="confirmPin2" maxlength="1" oninput="handlePinInput(this,'confirmPin3')" /><input type="password" class="pin-input" id="confirmPin3" maxlength="1" oninput="handlePinInput(this,'confirmPin4')" /><input type="password" class="pin-input" id="confirmPin4" maxlength="1" /></div>
+    <button class="submit-btn" onclick="setupPin()">Set PIN</button>
+  </div>
+
+  <div id="withdrawFormCardWrapper">
+    <div class="form-card" id="withdrawFormCard">
+      <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="12" y1="10" x2="12" y2="18"/><polyline points="9 15 12 18 15 15"/></svg>Withdrawal Form</h3>
+      <div class="form-group"><label class="form-label">Available Balance</label><div style="font-size:1.4rem;font-weight:800;color:var(--accent);" id="availableBalance">₦0.00</div></div>
+      <div class="form-group"><label class="form-label">Amount to Withdraw (₦)</label><input type="number" class="form-input" id="amount" placeholder="Enter amount" oninput="calculateFee()" /><div class="error-message" id="amountError"></div></div>
+      <div class="form-group"><label class="form-label">Select Bank</label><select class="form-input" id="bankName" onchange="onBankChange()"><option value="">-- Select Bank --</option></select><div class="error-message" id="bankError"></div></div>
+      <div class="form-group"><label class="form-label">Account Number</label><input type="text" class="form-input" id="accountNumber" placeholder="Enter 10-digit account number" maxlength="10" oninput="onAccountNumberInput()" /><div class="verify-status" id="verifyStatus"></div><div class="error-message" id="accountError"></div></div>
+      <div class="form-group"><label class="form-label">Account Name</label><input type="text" class="form-input" id="accountName" placeholder="Auto-verified or enter manually" /><div class="error-message" id="accountNameError"></div></div>
+      <div class="form-group"><label class="form-label">Enter 4-Digit PIN</label><div class="pin-inputs"><input type="password" class="pin-input" id="wPin1" maxlength="1" oninput="handlePinInput(this,'wPin2')" /><input type="password" class="pin-input" id="wPin2" maxlength="1" oninput="handlePinInput(this,'wPin3')" /><input type="password" class="pin-input" id="wPin3" maxlength="1" oninput="handlePinInput(this,'wPin4')" /><input type="password" class="pin-input" id="wPin4" maxlength="1" /></div><div class="error-message" id="pinError"></div></div>
+      <div class="summary-box" id="summaryBox" style="display:none;"><div class="summary-row"><span>Amount</span><span id="summaryAmount">₦0.00</span></div><div class="summary-row"><span>Fee (8%)</span><span class="fee" id="summaryFee">-₦0.00</span></div><div class="summary-row"><span>You'll Receive</span><span class="net" id="summaryNet">₦0.00</span></div><div class="summary-row"><span>Bank</span><span id="summaryBank">--</span></div><div class="summary-row"><span>Account</span><span id="summaryAccount">--</span></div></div>
+      <button class="submit-btn" id="submitBtn" onclick="submitWithdrawal()"><div class="spinner" id="spinner"></div><span id="btnText">Submit Withdrawal Request</span></button>
+    </div>
+  </div>
+
+</main>
+
+<nav class="bottom-nav">
+  <a href="dashboard.html" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>Home</a>
+  <a href="deposit.html" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>Deposit</a>
+  <a href="withdraw.html" class="nav-item active"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="12" y1="10" x2="12" y2="18"/><polyline points="9 15 12 18 15 15"/></svg>Withdraw</a>
+  <a href="investments.html" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Invest</a>
+  <a href="profile.html" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Profile</a>
+</nav>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+  import { getFirestore, doc, getDoc, updateDoc, collection, addDoc, serverTimestamp, increment, query, where, orderBy, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+  const firebaseConfig = { apiKey: "AIzaSyDT0ACobk5YMFgrqxb-VOnfELXTyssrOtA", authDomain: "newpro-d830e.firebaseapp.com", projectId: "newpro-d830e", storageBucket: "newpro-d830e.firebasestorage.app", messagingSenderId: "642315724384", appId: "1:642315724384:web:19def936898718e9300505" };
+  const app = initializeApp(firebaseConfig); const auth = getAuth(app); const db = getFirestore(app);
+
+  const PAYSTACK_SECRET = "sk_test_f813dfab8ff56e360c048af511e4ab1918cd6d3c";
+
+  const NIGERIAN_BANKS = [
+    { name: "Access Bank", code: "044" },{ name: "Citibank Nigeria", code: "023" },{ name: "Ecobank Nigeria", code: "050" },{ name: "Fidelity Bank", code: "070" },{ name: "First Bank of Nigeria", code: "011" },{ name: "First City Monument Bank (FCMB)", code: "214" },{ name: "Globus Bank", code: "00103" },{ name: "Guaranty Trust Bank (GTBank)", code: "058" },{ name: "Heritage Bank", code: "030" },{ name: "Jaiz Bank", code: "301" },{ name: "Keystone Bank", code: "082" },{ name: "Kuda Bank", code: "50211" },{ name: "Opay", code: "999992" },{ name: "PalmPay", code: "999991" },{ name: "Parallex Bank", code: "104" },{ name: "Polaris Bank", code: "076" },{ name: "PremiumTrust Bank", code: "105" },{ name: "Providus Bank", code: "101" },{ name: "Stanbic IBTC Bank", code: "221" },{ name: "Standard Chartered Bank", code: "068" },{ name: "Sterling Bank", code: "232" },{ name: "SunTrust Bank", code: "100" },{ name: "Taj Bank", code: "302" },{ name: "Titan Trust Bank", code: "102" },{ name: "Union Bank of Nigeria", code: "032" },{ name: "United Bank for Africa (UBA)", code: "033" },{ name: "Unity Bank", code: "215" },{ name: "Wema Bank", code: "035" },{ name: "Zenith Bank", code: "057" }
+  ];
+
+  let currentUser = null, userWithdrawalPin = null, canWithdraw = false, hasWithdrawnToday = false, hasActiveInvestment = false, allRequirementsMet = false, verifyTimeout = null;
+
+  function showToast(type, title, msg, d = 4000) { const t = document.getElementById('toast'); t.className = 'toast ' + type; document.getElementById('toastTitle').textContent = title; document.getElementById('toastMessage').textContent = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), d); }
+  function formatNaira(a) { return '₦' + Number(a).toLocaleString('en-NG', { minimumFractionDigits: 2 }); }
+  window.handlePinInput = function(c, n) { if(c.value.length===1 && n) document.getElementById(n)?.focus(); };
+
+  function populateBanks() {
+    const s = document.getElementById('bankName');
+    s.innerHTML = '<option value="">-- Select Bank --</option>';
+    NIGERIAN_BANKS.sort((a,b) => a.name.localeCompare(b.name)).forEach(b => { s.innerHTML += `<option value="${b.code}">${b.name}</option>`; });
+  }
+
+  function getBankName(code) { const b = NIGERIAN_BANKS.find(x => x.code === code); return b ? b.name : code; }
+
+  // ============ PAYSTACK VERIFICATION ============
+  window.onBankChange = function() {
+    document.getElementById('summaryBank').textContent = getBankName(document.getElementById('bankName').value) || '--';
+    calculateFee();
+    if(document.getElementById('accountNumber').value.length === 10) verifyAccount();
+  };
+
+  window.onAccountNumberInput = function() {
+    const acc = document.getElementById('accountNumber').value.replace(/\D/g,'');
+    document.getElementById('accountNumber').value = acc;
+    document.getElementById('summaryAccount').textContent = acc ? '****' + acc.slice(-4) : '--';
+    calculateFee();
+    clearTimeout(verifyTimeout);
+    if(acc.length === 10 && document.getElementById('bankName').value) {
+      document.getElementById('verifyStatus').className = 'verify-status verifying';
+      document.getElementById('verifyStatus').innerHTML = '<span class="spinner-small"></span> Verifying account...';
+      verifyTimeout = setTimeout(() => verifyAccount(), 600);
+    } else {
+      document.getElementById('verifyStatus').className = 'verify-status';
+      document.getElementById('verifyStatus').innerHTML = '';
+    }
+  };
+
+  async function verifyAccount() {
+    const accNum = document.getElementById('accountNumber').value.trim();
+    const bankCode = document.getElementById('bankName').value;
+    if(accNum.length !== 10 || !bankCode) return;
+
+    try {
+      console.log('Verifying:', accNum, bankCode);
+      const res = await fetch(`https://api.paystack.co/bank/resolve?account_number=${accNum}&bank_code=${bankCode}`, {
+        headers: { 'Authorization': `Bearer ${PAYSTACK_SECRET}`, 'Content-Type': 'application/json' }
+      });
+      const data = await res.json();
+      console.log('Paystack response:', data);
+
+      if(data.status === true && data.data && data.data.account_name) {
+        document.getElementById('accountName').value = data.data.account_name;
+        document.getElementById('verifyStatus').className = 'verify-status success';
+        document.getElementById('verifyStatus').innerHTML = '✅ Verified: <strong>' + data.data.account_name + '</strong>';
+      } else {
+        document.getElementById('verifyStatus').className = 'verify-status error';
+        document.getElementById('verifyStatus').innerHTML = '⚠️ Could not verify. You can enter name manually.';
+      }
+    } catch(e) {
+      console.error('Verify error:', e);
+      document.getElementById('verifyStatus').className = 'verify-status error';
+      document.getElementById('verifyStatus').innerHTML = '⚠️ Verification failed. Enter name manually.';
+    }
+  }
+
+  window.calculateFee = function() {
+    const a = parseFloat(document.getElementById('amount').value) || 0;
+    if(a > 0) {
+      const f = a * 0.08, n = a - f;
+      document.getElementById('summaryBox').style.display = 'block';
+      document.getElementById('summaryAmount').textContent = formatNaira(a);
+      document.getElementById('summaryFee').textContent = '- ' + formatNaira(f);
+      document.getElementById('summaryNet').textContent = formatNaira(n);
+    } else document.getElementById('summaryBox').style.display = 'none';
+  };
+
+  function checkWithdrawalWindow() {
+    const now = new Date(), day = now.getDay(), h = now.getHours(), m = now.getMinutes(), ct = h*60+m;
+    const banner = document.getElementById('statusBanner'), title = document.getElementById('statusTitle'), msg = document.getElementById('statusMessage');
+    if(day===0) { canWithdraw=false; banner.className='status-banner closed'; title.textContent='Withdrawals Closed'; msg.textContent='No withdrawals on Sundays.'; }
+    else if(ct<480||ct>=1020) { canWithdraw=false; banner.className='status-banner closed'; title.textContent='Withdrawals Closed'; msg.textContent='Available 8AM-5PM Mon-Sat.'; }
+    else { canWithdraw=true; banner.className='status-banner open'; title.textContent='Withdrawals Open'; msg.textContent='8AM-5PM Mon-Sat. Fee: 8%.'; }
+    updateRequirementsUI(); updateSubmitButton();
+  }
+
+  async function checkActiveInvestment(uid) {
+    try { const q = query(collection(db,'investments'),where('uid','==',uid),where('status','==','active')); hasActiveInvestment = !(await getDocs(q)).empty; } catch(e) { hasActiveInvestment=false; }
+    updateRequirementsUI(); updateSubmitButton(); updateFormAccess();
+  }
+
+  async function checkDailyWithdrawal(uid) {
+    try {
+      const today = new Date(); today.setHours(0,0,0,0);
+      const snap = await getDocs(query(collection(db,'withdrawals'),where('uid','==',uid),orderBy('createdAt','desc')));
+      hasWithdrawnToday = false; snap.forEach(d => { if(d.data().createdAt?.toDate() >= today) hasWithdrawnToday=true; });
+    } catch(e) { hasWithdrawnToday=false; }
+    updateRequirementsUI(); updateSubmitButton();
+  }
+
+  function updateRequirementsUI() {
+    document.getElementById('reqTimeIcon').className = 'requirement-icon '+(canWithdraw?'met':'unmet');
+    document.getElementById('reqTimeIcon').textContent = canWithdraw?'✅':'❌';
+    document.getElementById('reqTimeStatus').className = 'requirement-status '+(canWithdraw?'met':'unmet');
+    document.getElementById('reqTimeStatus').textContent = canWithdraw?'OK':'Closed';
+    
+    document.getElementById('reqDailyIcon').className = 'requirement-icon '+(!hasWithdrawnToday?'met':'unmet');
+    document.getElementById('reqDailyIcon').textContent = !hasWithdrawnToday?'✅':'❌';
+    document.getElementById('reqDailyStatus').className = 'requirement-status '+(!hasWithdrawnToday?'met':'unmet');
+    document.getElementById('reqDailyStatus').textContent = !hasWithdrawnToday?'OK':'Used Today';
+    
+    document.getElementById('reqInvestmentIcon').className = 'requirement-icon '+(hasActiveInvestment?'met':'unmet');
+    document.getElementById('reqInvestmentIcon').textContent = hasActiveInvestment?'✅':'❌';
+    document.getElementById('reqInvestmentStatus').className = 'requirement-status '+(hasActiveInvestment?'met':'unmet');
+    document.getElementById('reqInvestmentStatus').textContent = hasActiveInvestment?'Active':'Required';
+    
+    document.getElementById('reqPinIcon').className = 'requirement-icon '+(userWithdrawalPin?'met':'unmet');
+    document.getElementById('reqPinIcon').textContent = userWithdrawalPin?'✅':'❌';
+    document.getElementById('reqPinStatus').className = 'requirement-status '+(userWithdrawalPin?'met':'unmet');
+    document.getElementById('reqPinStatus').textContent = userWithdrawalPin?'Set':'Not Set';
+    
+    allRequirementsMet = canWithdraw && !hasWithdrawnToday && hasActiveInvestment && !!userWithdrawalPin;
+  }
+
+  function updateFormAccess() {
+    const w = document.getElementById('withdrawFormCardWrapper');
+    const ins = document.querySelectorAll('#withdrawFormCard .form-input, #withdrawFormCard .pin-input');
+    const sb = document.getElementById('submitBtn');
+    if(!hasActiveInvestment && userWithdrawalPin) { w.classList.add('disabled-overlay'); ins.forEach(i=>i.disabled=true); sb.disabled=true; }
+    else { w.classList.remove('disabled-overlay'); ins.forEach(i=>i.disabled=false); updateSubmitButton(); }
+  }
+
+  function updateSubmitButton() { document.getElementById('submitBtn').disabled = !allRequirementsMet; }
+
+  window.setupPin = async function() {
+    if(!currentUser) return;
+    const p = ['pin1','pin2','pin3','pin4'].map(id=>document.getElementById(id).value).join('');
+    const cp = ['confirmPin1','confirmPin2','confirmPin3','confirmPin4'].map(id=>document.getElementById(id).value).join('');
+    if(p.length!==4||cp.length!==4) { showToast('error','Invalid','Enter 4-digit PIN.'); return; }
+    if(p!==cp) { showToast('error','Mismatch','PINs do not match.'); return; }
+    await updateDoc(doc(db,'users',currentUser.uid),{withdrawalPin:p});
+    userWithdrawalPin=p;
+    document.getElementById('pinSetupCard').style.display='none';
+    document.getElementById('withdrawFormCardWrapper').style.display='block';
+    updateRequirementsUI(); updateSubmitButton(); updateFormAccess();
+    showToast('success','PIN Set!','Your withdrawal PIN has been set.');
+  };
+
+  window.submitWithdrawal = async function() {
+    if(!currentUser||!userWithdrawalPin) return;
+    if(!hasActiveInvestment) { showToast('warning','Investment Required','You need an active investment.'); return; }
+    if(!canWithdraw) { showToast('error','Closed','Withdrawals are only Mon-Sat, 8AM-5PM.'); return; }
+    if(hasWithdrawnToday) { showToast('error','Limit','Once per day only.'); return; }
+    
+    document.querySelectorAll('.error-message').forEach(e=>e.classList.remove('show'));
+    const amount = parseFloat(document.getElementById('amount').value);
+    const bankCode = document.getElementById('bankName').value;
+    const bankName = getBankName(bankCode);
+    const accNum = document.getElementById('accountNumber').value.trim();
+    const accName = document.getElementById('accountName').value.trim();
+    const pin = ['wPin1','wPin2','wPin3','wPin4'].map(id=>document.getElementById(id).value).join('');
+    
+    let err = false;
+    if(!amount||amount<3000) { document.getElementById('amountError').textContent='Minimum ₦3,000.'; document.getElementById('amountError').classList.add('show'); err=true; }
+    if(!bankCode) { document.getElementById('bankError').textContent='Select a bank.'; document.getElementById('bankError').classList.add('show'); err=true; }
+    if(!accNum||accNum.length!==10||!/^\d{10}$/.test(accNum)) { document.getElementById('accountError').textContent='Valid 10-digit account number.'; document.getElementById('accountError').classList.add('show'); err=true; }
+    if(!accName) { document.getElementById('accountNameError').textContent='Enter account name.'; document.getElementById('accountNameError').classList.add('show'); err=true; }
+    if(pin.length!==4) { document.getElementById('pinError').textContent='Enter 4-digit PIN.'; document.getElementById('pinError').classList.add('show'); err=true; }
+    else if(pin!==userWithdrawalPin) { document.getElementById('pinError').textContent='Incorrect PIN.'; document.getElementById('pinError').classList.add('show'); err=true; }
+    if(err) return;
+
+    try {
+      const us = await getDoc(doc(db,'users',currentUser.uid)); const ud = us.data();
+      if(amount > (ud.withdrawalWallet||0)) { showToast('error','Insufficient','Balance too low.'); return; }
+      const fee = amount * 0.08, net = amount - fee;
+      const btn = document.getElementById('submitBtn'), sp = document.getElementById('spinner'), tx = document.getElementById('btnText');
+      btn.disabled=true; sp.style.display='block'; tx.textContent='Processing...';
+      
+      await updateDoc(doc(db,'users',currentUser.uid),{withdrawalWallet:increment(-amount),totalWithdrawals:increment(amount)});
+      await addDoc(collection(db,'withdrawals'),{uid:currentUser.uid,email:ud.email,amount,fee,netAmount:net,bankName,accountNumber:accNum,accountName:accName,status:'pending',createdAt:serverTimestamp(),processedAt:null});
+      await addDoc(collection(db,'transactions'),{uid:currentUser.uid,type:'withdrawal',amount,fee,netAmount:net,bankName,accountNumber:accNum,status:'pending',createdAt:serverTimestamp(),description:`Withdrawal to ${bankName} - ${accNum.slice(-4)}`});
+      
+      document.getElementById('amount').value=''; document.getElementById('bankName').value=''; document.getElementById('accountNumber').value=''; document.getElementById('accountName').value='';
+      ['wPin1','wPin2','wPin3','wPin4'].forEach(id=>document.getElementById(id).value='');
+      document.getElementById('summaryBox').style.display='none'; document.getElementById('verifyStatus').innerHTML='';
+      btn.disabled=false; sp.style.display='none'; tx.textContent='Submit Withdrawal Request';
+      showToast('success','Submitted! 🎉',`Withdrawal of ${formatNaira(net)} to ${bankName} submitted.`);
+      setTimeout(()=>window.location.href='transactions.html',2500);
+    } catch(e) { console.error(e); showToast('error','Error','Failed. Try again.'); document.getElementById('submitBtn').disabled=false; document.getElementById('spinner').style.display='none'; document.getElementById('btnText').textContent='Submit Withdrawal Request'; }
+  };
+
+  async function loadUserData(uid) {
+    try {
+      const s = await getDoc(doc(db,'users',uid));
+      if(!s.exists()) return;
+      const d = s.data();
+      document.getElementById('headerBalance').textContent = formatNaira(d.withdrawalWallet||0);
+      document.getElementById('availableBalance').textContent = formatNaira(d.withdrawalWallet||0);
+      userWithdrawalPin = d.withdrawalPin || null;
+      if(!userWithdrawalPin) { document.getElementById('pinSetupCard').style.display='block'; document.getElementById('withdrawFormCardWrapper').style.display='none'; }
+      else { document.getElementById('pinSetupCard').style.display='none'; document.getElementById('withdrawFormCardWrapper').style.display='block'; }
+      await checkActiveInvestment(uid); await checkDailyWithdrawal(uid);
+      checkWithdrawalWindow(); updateFormAccess();
+    } catch(e) { console.error(e); }
+  }
+
+  populateBanks();
+  onAuthStateChanged(auth, (u) => { if(u) { currentUser=u; loadUserData(u.uid); setInterval(checkWithdrawalWindow,60000); } else window.location.href='login.html'; });
+</script>
+</body>
+</html>
