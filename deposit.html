@@ -214,7 +214,7 @@
       console.log('Fallback to direct URL');
       btn.textContent = 'Redirecting...';
       // Use CORRECT merchant ID: 977977001 with mchOrderNo
-      window.location.href = 'https://mch.nekpayment.com/pay?mchId=' + NEKPAY_MCHID + '&amount=' + autoSelectedAmount + '&mchOrderNo=' + reference + '&currency=NGN&channel_id=523&callback_url=' + encodeURIComponent(callbackUrl) + '&email=' + encodeURIComponent(currentUser.email || '') + '&signType=MD5';
+      window.location.href = 'https://api.nekpayment.com/pay/web?mchId=' + NEKPAY_MCHID + '&amount=' + autoSelectedAmount + '&mchOrderNo=' + reference + '&currency=NGN&channel_id=523&callback_url=' + encodeURIComponent(callbackUrl) + '&email=' + encodeURIComponent(currentUser.email || '') + '&signType=MD5';
     }
   };
 
