@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
+  <title>Evonance – Admin Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0a0e17; --card: #111827; --card-hover: #1a2332;
+      --primary: #f59e0b; --primary-dark: #d97706; --primary-soft: rgba(245,158,11,0.1);
+      --accent: #fbbf24; --text: #f1f5f9; --muted: #94a3b8; --border: #1e293b;
+      --input-bg: #0f172a; --success: #10b981; --error: #ef4444; --warning: #f59e0b;
+      --info: #3b82f6; --purple: #8b5cf6; --glow: 0 0 40px rgba(245,158,11,0.08);
+    }
+    body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); min-height: 100vh; color: var(--text); display: flex; }
+
+    .sidebar { width: 260px; min-height: 100vh; background: var(--card); border-right: 1px solid var(--border); padding: 20px 0; position: fixed; top: 0; left: 0; bottom: 0; z-index: 100; display: flex; flex-direction: column; overflow-y: auto; }
+    .sidebar-logo { display: flex; align-items: center; gap: 10px; padding: 0 20px 20px; border-bottom: 1px solid var(--border); margin-bottom: 16px; }
+    .sidebar-logo-icon { width: 38px; height: 38px; background: linear-gradient(135deg, var(--primary), #fbbf24); border-radius: 10px; display: flex; align-items: center; justify-content: center; }
+    .sidebar-logo-icon svg { width: 20px; height: 20px; color: #1a1a1a; }
+    .sidebar-brand { font-size: 1.1rem; font-weight: 800; color: var(--text); }
+    .sidebar-brand span { color: var(--primary); }
+    .sidebar-nav { flex: 1; padding: 0 12px; }
+    .sidebar-link { display: flex; align-items: center; gap: 10px; padding: 12px 16px; border-radius: 12px; color: var(--muted); text-decoration: none; font-size: 0.85rem; font-weight: 500; transition: all 0.2s; margin-bottom: 4px; }
+    .sidebar-link:hover { background: var(--card-hover); color: var(--text); }
+    .sidebar-link.active { background: var(--primary-soft); color: var(--primary); font-weight: 600; }
+    .sidebar-link svg { width: 20px; height: 20px; }
+    .sidebar-link .badge { margin-left: auto; background: var(--error); color: white; font-size: 0.65rem; padding: 2px 8px; border-radius: 50px; font-weight: 700; }
+    .sidebar-link .badge.warn { background: var(--warning); color: #1a1a1a; }
+    .sidebar-footer { padding: 16px 20px 0; border-top: 1px solid var(--border); margin-top: auto; }
+    .sidebar-user { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+    .sidebar-avatar { width: 36px; height: 36px; background: var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.85rem; color: #1a1a1a; }
+    .sidebar-user-info { flex: 1; }
+    .sidebar-user-name { font-size: 0.8rem; font-weight: 600; }
+    .sidebar-user-role { font-size: 0.68rem; color: var(--primary); }
+    .sidebar-logout { display: flex; align-items: center; gap: 8px; padding: 10px 14px; border-radius: 10px; color: #fca5a5; cursor: pointer; font-size: 0.82rem; font-weight: 500; transition: all 0.2s; background: none; border: none; width: 100%; font-family: inherit; }
+    .sidebar-logout:hover { background: rgba(239,68,68,0.1); }
+    .sidebar-logout svg { width: 18px; height: 18px; }
+
+    .main-content { flex: 1; margin-left: 260px; padding: 24px; }
+    .page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; flex-wrap: wrap; gap: 12px; }
+    .page-title { font-size: 1.5rem; font-weight: 800; }
+    .refresh-btn { background: var(--card); border: 1px solid var(--border); color: var(--text); padding: 8px 16px; border-radius: 50px; font-family: inherit; font-size: 0.8rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; }
+    .refresh-btn:hover { background: var(--card-hover); }
+
+    .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 24px; }
+    .stat-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 20px; position: relative; overflow: hidden; }
+    .stat-card:hover { border-color: var(--primary); }
+    .stat-icon { width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; margin-bottom: 12px; }
+    .stat-icon.users { background: rgba(59,130,246,0.15); }
+    .stat-icon.deposits { background: rgba(16,185,129,0.15); }
+    .stat-icon.withdrawals { background: rgba(245,158,11,0.15); }
+    .stat-icon.investments { background: rgba(139,92,246,0.15); }
+    .stat-value { font-size: 1.8rem; font-weight: 800; margin-bottom: 2px; }
+    .stat-label { font-size: 0.72rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+    .stat-change { font-size: 0.7rem; margin-top: 4px; font-weight: 600; }
+    .stat-change.up { color: var(--success); }
+
+    /* Chart */
+    .chart-section { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 20px; margin-bottom: 24px; }
+    .chart-container { height: 250px; position: relative; }
+    .chart-bars { display: flex; align-items: flex-end; justify-content: space-around; height: 200px; gap: 12px; padding: 0 10px; }
+    .chart-bar-wrap { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+    .chart-bar { width: 100%; max-width: 60px; border-radius: 8px 8px 0 0; transition: height 0.6s ease; position: relative; min-height: 4px; }
+    .chart-bar.users { background: linear-gradient(180deg, #3b82f6, #2563eb); }
+    .chart-bar.deposits { background: linear-gradient(180deg, #10b981, #059669); }
+    .chart-bar.withdrawals { background: linear-gradient(180deg, #f59e0b, #d97706); }
+    .chart-bar.investments { background: linear-gradient(180deg, #8b5cf6, #7c3aed); }
+    .chart-val { position: absolute; top: -18px; left: 50%; transform: translateX(-50%); font-size: 0.6rem; font-weight: 700; white-space: nowrap; }
+    .chart-label { font-size: 0.62rem; color: var(--muted); text-align: center; }
+    .chart-legend { display: flex; justify-content: center; gap: 16px; margin-top: 12px; }
+    .legend-item { display: flex; align-items: center; gap: 6px; font-size: 0.68rem; color: var(--muted); }
+    .legend-dot { width: 10px; height: 10px; border-radius: 3px; }
+    .legend-dot.users { background: #3b82f6; }
+    .legend-dot.deposits { background: #10b981; }
+    .legend-dot.withdrawals { background: #f59e0b; }
+    .legend-dot.investments { background: #8b5cf6; }
+
+    .row-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 24px; }
+    .section-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 20px; }
+    .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+    .section-title { font-size: 0.9rem; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+    .section-title svg { width: 18px; height: 18px; color: var(--primary); }
+    .view-all { font-size: 0.75rem; color: var(--primary); text-decoration: none; font-weight: 600; }
+
+    /* System Section */
+    .system-actions { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 16px; }
+    .system-btn { padding: 14px; border-radius: 14px; font-family: inherit; font-size: 0.78rem; font-weight: 700; cursor: pointer; border: none; transition: all 0.2s; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+    .system-btn.danger { background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3); color: #fca5a5; }
+    .system-btn.danger:hover { background: rgba(239,68,68,0.2); }
+    .system-btn.warning { background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.3); color: #fbbf24; }
+    .system-btn.warning:hover { background: rgba(245,158,11,0.2); }
+    .system-btn svg { width: 20px; height: 20px; }
+
+    .pending-list { display: flex; flex-direction: column; gap: 8px; }
+    .pending-item { display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; background: var(--input-bg); border-radius: 12px; border: 1px solid var(--border); }
+    .pending-avatar { width: 36px; height: 36px; border-radius: 50%; background: var(--primary-soft); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.8rem; color: var(--primary); }
+    .pending-info h4 { font-size: 0.82rem; font-weight: 600; }
+    .pending-info p { font-size: 0.7rem; color: var(--muted); }
+    .pending-amount { font-size: 0.85rem; font-weight: 700; }
+    .pending-badge { font-size: 0.62rem; font-weight: 700; padding: 4px 8px; border-radius: 50px; background: rgba(245,158,11,0.15); color: var(--warning); }
+
+    /* User Search */
+    .user-search-bar { display: flex; gap: 8px; margin-bottom: 12px; }
+    .search-input { flex: 1; height: 40px; background: var(--input-bg); border: 1px solid var(--border); border-radius: 10px; padding: 0 12px; font-family: inherit; font-size: 0.82rem; color: var(--text); outline: none; }
+    .search-input:focus { border-color: var(--primary); }
+    .search-btn { padding: 8px 16px; background: var(--primary); color: #1a1a1a; border: none; border-radius: 10px; font-family: inherit; font-weight: 700; cursor: pointer; font-size: 0.8rem; }
+    .user-result { background: var(--input-bg); border: 1px solid var(--border); border-radius: 12px; padding: 12px; margin-top: 8px; display: none; }
+    .user-result.show { display: block; }
+    .user-actions { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+    .user-action-btn { padding: 6px 12px; border-radius: 8px; font-family: inherit; font-size: 0.7rem; font-weight: 600; cursor: pointer; border: none; }
+    .user-action-btn.suspend { background: var(--warning); color: #1a1a1a; }
+    .user-action-btn.delete { background: var(--error); color: white; }
+
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 300; align-items: center; justify-content: center; padding: 20px; }
+    .modal-overlay.show { display: flex; }
+    .modal { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 24px; max-width: 420px; width: 100%; text-align: center; }
+    .modal h3 { font-size: 1.1rem; margin-bottom: 12px; }
+    .modal p { font-size: 0.85rem; color: var(--muted); margin-bottom: 20px; }
+    .modal-buttons { display: flex; gap: 10px; }
+    .modal-btn { flex: 1; padding: 11px; border-radius: 50px; font-family: inherit; font-size: 0.85rem; font-weight: 700; cursor: pointer; border: none; }
+    .modal-btn.cancel { background: var(--input-bg); color: var(--text); border: 1px solid var(--border); }
+    .modal-btn.danger { background: var(--error); color: white; }
+
+    .toast { position: fixed; top: 20px; right: 20px; background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 16px 24px; display: flex; align-items: center; gap: 12px; z-index: 1000; transform: translateX(120%); transition: transform 0.5s; box-shadow: 0 20px 40px rgba(0,0,0,0.5); max-width: 380px; }
+    .toast.show { transform: translateX(0); }
+    .toast.success { border-left: 4px solid var(--success); }
+    .toast-icon { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+    .toast.success .toast-icon { background: rgba(16,185,129,0.15); }
+    .toast-icon svg { width: 20px; height: 20px; color: var(--success); }
+    .toast-content h4 { font-size: 0.9rem; font-weight: 700; }
+    .toast-content p { font-size: 0.75rem; color: var(--muted); }
+    .no-data { text-align: center; padding: 24px; color: var(--muted); font-size: 0.82rem; }
+
+    @media (max-width: 1024px) { .stats-grid { grid-template-columns: repeat(2,1fr); } .row-grid { grid-template-columns: 1fr; } .system-actions { grid-template-columns: repeat(2,1fr); } }
+    @media (max-width: 768px) { .sidebar { display: none; } .main-content { margin-left: 0; } }
+  </style>
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="sidebar-logo"><div class="sidebar-logo-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg></div><span class="sidebar-brand">Ev<span>onance</span></span></div>
+  <nav class="sidebar-nav">
+    <a href="admin-dashboard.html" class="sidebar-link active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Dashboard</a>
+    <a href="admin-users.html" class="sidebar-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>Users</a>
+    <a href="admin-deposits.html" class="sidebar-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>Deposits <span class="badge" id="pendingDepBadge">0</span></a>
+    <a href="admin-withdrawals.html" class="sidebar-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="12" y1="10" x2="12" y2="18"/><polyline points="9 15 12 18 15 15"/></svg>Withdrawals <span class="badge warn" id="pendingWithBadge">0</span></a>
+    <a href="admin-investments.html" class="sidebar-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Investments</a>
+    <a href="admin-add.html" class="sidebar-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Add Plans</a>
+    <a href="admin-notifications.html" class="sidebar-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>Notifications</a>
+    <a href="admin-settings.html" class="sidebar-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>Settings</a>
+  </nav>
+  <div class="sidebar-footer"><div class="sidebar-user"><div class="sidebar-avatar">A</div><div class="sidebar-user-info"><div class="sidebar-user-name">Admin</div><div class="sidebar-user-role">Administrator</div></div></div><button class="sidebar-logout" onclick="handleLogout()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>Logout</button></div>
+</aside>
+
+<main class="main-content">
+  <div class="page-header">
+    <div><h1 class="page-title">Admin Dashboard</h1><p style="color:var(--muted);font-size:0.85rem;">Platform overview & system controls</p></div>
+    <div style="display:flex;gap:10px;align-items:center;">
+      <span style="font-size:0.72rem;color:var(--muted);" id="lastUpdated">Just now</span>
+      <button class="refresh-btn" onclick="refreshData()">🔄 Refresh</button>
+    </div>
+  </div>
+
+  <div class="stats-grid">
+    <div class="stat-card"><div class="stat-icon users">👥</div><div class="stat-value" id="totalUsers">0</div><div class="stat-label">Total Users</div><div class="stat-change up" id="todayUsers">+0 today</div></div>
+    <div class="stat-card"><div class="stat-icon deposits">💰</div><div class="stat-value" id="totalDeposits">₦0</div><div class="stat-label">Total Deposits</div><div class="stat-change up" id="pendingDeposits">0 pending</div></div>
+    <div class="stat-card"><div class="stat-icon withdrawals">💸</div><div class="stat-value" id="totalWithdrawals">₦0</div><div class="stat-label">Total Withdrawals</div><div class="stat-change up" id="pendingWithdrawals">0 pending</div></div>
+    <div class="stat-card"><div class="stat-icon investments">📈</div><div class="stat-value" id="activeInvestments">0</div><div class="stat-label">Active Investments</div><div class="stat-change up" id="totalInvested">₦0 invested</div></div>
+  </div>
+
+  <!-- Chart -->
+  <div class="chart-section">
+    <div class="section-header"><span class="section-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Platform Overview</span></div>
+    <div class="chart-container">
+      <div class="chart-bars">
+        <div class="chart-bar-wrap"><div class="chart-bar users" id="barUsers"><span class="chart-val">0</span></div><span class="chart-label">Users</span></div>
+        <div class="chart-bar-wrap"><div class="chart-bar deposits" id="barDeposits"><span class="chart-val">₦0</span></div><span class="chart-label">Deposits</span></div>
+        <div class="chart-bar-wrap"><div class="chart-bar withdrawals" id="barWithdrawals"><span class="chart-val">₦0</span></div><span class="chart-label">Withdrawals</span></div>
+        <div class="chart-bar-wrap"><div class="chart-bar investments" id="barInvestments"><span class="chart-val">0</span></div><span class="chart-label">Investments</span></div>
+      </div>
+    </div>
+    <div class="chart-legend">
+      <div class="legend-item"><div class="legend-dot users"></div>Users</div>
+      <div class="legend-item"><div class="legend-dot deposits"></div>Deposits</div>
+      <div class="legend-item"><div class="legend-dot withdrawals"></div>Withdrawals</div>
+      <div class="legend-item"><div class="legend-dot investments"></div>Investments</div>
+    </div>
+  </div>
+
+  <!-- System Cleanup -->
+  <div class="section-card" style="margin-bottom:24px;">
+    <div class="section-header"><span class="section-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>System Controls</span></div>
+    <div class="system-actions">
+      <button class="system-btn warning" onclick="showConfirmModal('clearDeposits')">🗑️ Clear All Deposits</button>
+      <button class="system-btn warning" onclick="showConfirmModal('clearWithdrawals')">🗑️ Clear All Withdrawals</button>
+      <button class="system-btn warning" onclick="showConfirmModal('clearInvestments')">🗑️ Clear All Investments</button>
+      <button class="system-btn warning" onclick="showConfirmModal('clearTransactions')">🗑️ Clear All Transactions</button>
+      <button class="system-btn danger" onclick="showConfirmModal('clearUsers')">⚠️ Delete All Users</button>
+      <button class="system-btn danger" onclick="showConfirmModal('clearAll')">☠️ Wipe Entire System</button>
+    </div>
+  </div>
+
+  <!-- User Search -->
+  <div class="section-card" style="margin-bottom:24px;">
+    <div class="section-header"><span class="section-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>Quick User Search</span></div>
+    <div class="user-search-bar">
+      <input type="text" class="search-input" id="userSearchInput" placeholder="Search by email..." />
+      <button class="search-btn" onclick="searchUser()">🔍 Search</button>
+    </div>
+    <div class="user-result" id="userResult"></div>
+  </div>
+
+  <div class="row-grid">
+    <div class="section-card">
+      <div class="section-header"><span class="section-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>Pending Deposits</span><a href="admin-deposits.html" class="view-all">View All →</a></div>
+      <div class="pending-list" id="pendingDepList"><div class="no-data">No pending deposits</div></div>
+    </div>
+    <div class="section-card">
+      <div class="section-header"><span class="section-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="12" y1="10" x2="12" y2="18"/><polyline points="9 15 12 18 15 15"/></svg>Pending Withdrawals</span><a href="admin-withdrawals.html" class="view-all">View All →</a></div>
+      <div class="pending-list" id="pendingWithList"><div class="no-data">No pending withdrawals</div></div>
+    </div>
+  </div>
+
+  <div class="section-card">
+    <div class="section-header"><span class="section-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>Recent Users</span><a href="admin-users.html" class="view-all">View All →</a></div>
+    <div class="pending-list" id="recentUsersList"><div class="no-data">No users yet</div></div>
+  </div>
+</main>
+
+<!-- Confirm Modal -->
+<div class="modal-overlay" id="confirmModal">
+  <div class="modal">
+    <h3 id="confirmTitle">Confirm Action</h3>
+    <p id="confirmMsg">Are you sure?</p>
+    <div class="modal-buttons">
+      <button class="modal-btn cancel" onclick="closeConfirmModal()">Cancel</button>
+      <button class="modal-btn danger" id="confirmBtn" onclick="executeAction()">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast success" id="toast"><div class="toast-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div><div class="toast-content"><h4>Success</h4><p id="toastMsg"></p></div></div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+  import { getFirestore, doc, getDoc, updateDoc, deleteDoc, collection, query, where, orderBy, getDocs, getCountFromServer, writeBatch } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+  const firebaseConfig = { apiKey: "AIzaSyDT0ACobk5YMFgrqxb-VOnfELXTyssrOtA", authDomain: "newpro-d830e.firebaseapp.com", projectId: "newpro-d830e", storageBucket: "newpro-d830e.firebasestorage.app", messagingSenderId: "642315724384", appId: "1:642315724384:web:19def936898718e9300505" };
+  const app = initializeApp(firebaseConfig); const auth = getAuth(app); const db = getFirestore(app);
+
+  let currentAction = null, currentUserData = null;
+
+  function showToast(msg) { const t = document.getElementById('toast'); document.getElementById('toastMsg').textContent = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 3000); }
+  function formatNaira(a) { if(a>=1000000) return '₦'+(a/1000000).toFixed(1)+'M'; if(a>=1000) return '₦'+(a/1000).toFixed(0)+'K'; return '₦'+Number(a).toLocaleString('en-NG'); }
+  function formatNairaFull(a) { return '₦'+Number(a).toLocaleString('en-NG',{minimumFractionDigits:2}); }
+  function formatDate(ts) { if(!ts) return ''; const d=ts.toDate?ts.toDate():new Date(ts); const now=new Date(); const diff=now-d; const days=Math.floor(diff/86400000); if(days===0) return 'Today'; if(days===1) return 'Yesterday'; if(days<7) return days+'d ago'; return d.toLocaleDateString('en-NG',{month:'short',day:'numeric'}); }
+  function maskEmail(e) { if(!e) return ''; const p=e.split('@'); return p[0].substring(0,4)+'***@'+p[1]; }
+
+  window.handleLogout = async () => { await signOut(auth); window.location.href = 'admin-login.html'; };
+  window.refreshData = () => loadDashboard();
+
+  // ============ SYSTEM CLEANUP ============
+  window.showConfirmModal = (action) => {
+    currentAction = action;
+    const titles = { clearDeposits:'Clear All Deposits', clearWithdrawals:'Clear All Withdrawals', clearInvestments:'Clear All Investments', clearTransactions:'Clear All Transactions', clearUsers:'Delete ALL Users', clearAll:'WIPE ENTIRE SYSTEM' };
+    const msgs = { clearDeposits:'This will delete ALL deposit records. Continue?', clearWithdrawals:'This will delete ALL withdrawal records. Continue?', clearInvestments:'This will delete ALL investment records. Continue?', clearTransactions:'This will delete ALL transaction records. Continue?', clearUsers:'This will permanently delete ALL users and their data. This CANNOT be undone!', clearAll:'This will delete EVERYTHING - users, deposits, withdrawals, investments, transactions. This CANNOT be undone!' };
+    document.getElementById('confirmTitle').textContent = titles[action]||'Confirm';
+    document.getElementById('confirmMsg').textContent = msgs[action]||'Are you sure?';
+    document.getElementById('confirmModal').classList.add('show');
+  };
+  window.closeConfirmModal = () => document.getElementById('confirmModal').classList.remove('show');
+
+  window.executeAction = async () => {
+    if(!currentAction) return;
+    closeConfirmModal();
+    try {
+      if(currentAction === 'clearDeposits') { const s=await getDocs(collection(db,'deposits')); for(const d of s.docs) await deleteDoc(d.ref); showToast('All deposits cleared!'); }
+      else if(currentAction === 'clearWithdrawals') { const s=await getDocs(collection(db,'withdrawals')); for(const d of s.docs) await deleteDoc(d.ref); showToast('All withdrawals cleared!'); }
+      else if(currentAction === 'clearInvestments') { const s=await getDocs(collection(db,'investments')); for(const d of s.docs) await deleteDoc(d.ref); showToast('All investments cleared!'); }
+      else if(currentAction === 'clearTransactions') { const s=await getDocs(collection(db,'transactions')); for(const d of s.docs) await deleteDoc(d.ref); showToast('All transactions cleared!'); }
+      else if(currentAction === 'clearUsers') { const s=await getDocs(collection(db,'users')); for(const d of s.docs) await deleteDoc(d.ref); showToast('All users deleted!'); }
+      else if(currentAction === 'clearAll') {
+        for(const coll of ['users','deposits','withdrawals','investments','transactions','notifications','referralCodes']) {
+          const s=await getDocs(collection(db,coll)); for(const d of s.docs) await deleteDoc(d.ref);
+        }
+        showToast('System wiped completely!');
+      }
+      loadDashboard();
+    } catch(e) { showToast('Error: '+e.message); }
+    currentAction = null;
+  };
+
+  // ============ USER SEARCH ============
+  window.searchUser = async () => {
+    const email = document.getElementById('userSearchInput').value.trim().toLowerCase();
+    const res = document.getElementById('userResult');
+    if(!email) { res.classList.remove('show'); return; }
+    try {
+      const q = query(collection(db,'users'));
+      const snap = await getDocs(q);
+      let found = null;
+      snap.forEach(d => { if((d.data().email||'').toLowerCase().includes(email)) found = { id: d.id, ...d.data() }; });
+      if(!found) { res.innerHTML = '<p style="color:var(--muted);">No user found.</p>'; res.classList.add('show'); return; }
+      currentUserData = found;
+      res.innerHTML = `
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div><strong>${found.email}</strong> | ${found.phone||'N/A'} | Ref: ${found.referralCode||'N/A'}</div>
+          <span style="font-size:0.7rem;color:var(--muted);">Status: ${found.status||'active'}</span>
+        </div>
+        <div style="font-size:0.75rem;color:var(--muted);margin-top:4px;">Balance: ${formatNairaFull((found.depositWallet||0)+(found.withdrawalWallet||0))} | Active Invest: ${found.activeInvestments||0}</div>
+        <div class="user-actions">
+          <button class="user-action-btn suspend" onclick="toggleUserStatus('${found.id}','${found.status||'active'}')">${found.status==='suspended'?'Unsuspend':'Suspend'}</button>
+          <button class="user-action-btn delete" onclick="deleteUser('${found.id}')">Delete User</button>
+        </div>`;
+      res.classList.add('show');
+    } catch(e) { console.error(e); }
+  };
+
+  window.toggleUserStatus = async (uid, status) => {
+    const newStatus = status === 'suspended' ? 'active' : 'suspended';
+    await updateDoc(doc(db,'users',uid), { status: newStatus });
+    showToast(`User ${newStatus==='suspended'?'suspended':'unsuspended'}!`);
+    searchUser();
+  };
+
+  window.deleteUser = async (uid) => {
+    if(!confirm('Permanently delete this user and ALL their data?')) return;
+    await deleteDoc(doc(db,'users',uid));
+    const refSnap = await getDocs(query(collection(db,'referralCodes'),where('uid','==',uid)));
+    refSnap.forEach(async d => await deleteDoc(d.ref));
+    for(const coll of ['deposits','withdrawals','investments','transactions','notifications']) {
+      const s = await getDocs(query(collection(db,coll),where('uid','==',uid)));
+      for(const d of s.docs) await deleteDoc(d.ref);
+    }
+    showToast('User and all data deleted!');
+    document.getElementById('userResult').classList.remove('show');
+    loadDashboard();
+  };
+
+  // ============ CHART ============
+  function updateChart(users, deposits, withdrawals, investments) {
+    const max = Math.max(users, deposits/1000, withdrawals/1000, investments, 1);
+    document.getElementById('barUsers').style.height = Math.max((users/max)*100, 4) + '%';
+    document.getElementById('barUsers').querySelector('.chart-val').textContent = users;
+    document.getElementById('barDeposits').style.height = Math.max(((deposits/1000)/max)*100, 4) + '%';
+    document.getElementById('barDeposits').querySelector('.chart-val').textContent = formatNaira(deposits);
+    document.getElementById('barWithdrawals').style.height = Math.max(((withdrawals/1000)/max)*100, 4) + '%';
+    document.getElementById('barWithdrawals').querySelector('.chart-val').textContent = formatNaira(withdrawals);
+    document.getElementById('barInvestments').style.height = Math.max((investments/max)*100, 4) + '%';
+    document.getElementById('barInvestments').querySelector('.chart-val').textContent = investments;
+  }
+
+  // ============ LOAD DATA ============
+  async function loadDashboard() {
+    try {
+      const usersSnap = await getCountFromServer(collection(db,'users'));
+      const totalUsers = usersSnap.data().count;
+      document.getElementById('totalUsers').textContent = totalUsers;
+
+      const today = new Date(); today.setHours(0,0,0,0);
+      const todaySnap = await getCountFromServer(query(collection(db,'users'),where('createdAt','>=',today)));
+      document.getElementById('todayUsers').textContent = '+'+todaySnap.data().count+' today';
+
+      const allUsers = await getDocs(collection(db,'users'));
+      let totalDep=0, totalWith=0, activeInv=0;
+      allUsers.forEach(d => { const u=d.data(); totalDep+=u.totalDeposits||0; totalWith+=u.totalWithdrawals||0; activeInv+=u.activeInvestments||0; });
+      document.getElementById('totalDeposits').textContent = formatNaira(totalDep);
+      document.getElementById('totalWithdrawals').textContent = formatNaira(totalWith);
+      document.getElementById('activeInvestments').textContent = activeInv;
+
+      let totalInvested=0;
+      const invSnap = await getDocs(collection(db,'investments'));
+      invSnap.forEach(d => { totalInvested+=d.data().amount||0; });
+      document.getElementById('totalInvested').textContent = formatNaira(totalInvested)+' invested';
+
+      const pendDep = await getCountFromServer(query(collection(db,'deposits'),where('status','==','pending')));
+      document.getElementById('pendingDeposits').textContent = pendDep.data().count+' pending';
+      document.getElementById('pendingDepBadge').textContent = pendDep.data().count;
+      document.getElementById('pendingDepBadge').style.display = pendDep.data().count===0?'none':'inline';
+
+      const pendWith = await getCountFromServer(query(collection(db,'withdrawals'),where('status','==','pending')));
+      document.getElementById('pendingWithdrawals').textContent = pendWith.data().count+' pending';
+      document.getElementById('pendingWithBadge').textContent = pendWith.data().count;
+      document.getElementById('pendingWithBadge').style.display = pendWith.data().count===0?'none':'inline';
+
+      updateChart(totalUsers, totalDep, totalWith, activeInv);
+
+      // Pending lists
+      const depList = document.getElementById('pendingDepList');
+      const depSnap = await getDocs(query(collection(db,'deposits'),where('status','==','pending'),orderBy('createdAt','desc')));
+      if(depSnap.empty) depList.innerHTML='<div class="no-data">No pending deposits</div>';
+      else { depList.innerHTML=''; depSnap.forEach(d=>{ const x=d.data(); depList.innerHTML+=`<div class="pending-item"><div style="display:flex;align-items:center;gap:10px;"><div class="pending-avatar">${(x.fullName||x.email||'U').charAt(0).toUpperCase()}</div><div class="pending-info"><h4>${x.fullName||maskEmail(x.email||'')}</h4><p>${formatDate(x.createdAt)}</p></div></div><div style="text-align:right;"><div class="pending-amount">${formatNairaFull(x.amount)}</div><span class="pending-badge">Pending</span></div></div>`; }); }
+
+      const withList = document.getElementById('pendingWithList');
+      const withSnap = await getDocs(query(collection(db,'withdrawals'),where('status','==','pending'),orderBy('createdAt','desc')));
+      if(withSnap.empty) withList.innerHTML='<div class="no-data">No pending withdrawals</div>';
+      else { withList.innerHTML=''; withSnap.forEach(d=>{ const x=d.data(); withList.innerHTML+=`<div class="pending-item"><div style="display:flex;align-items:center;gap:10px;"><div class="pending-avatar">${(x.accountName||x.email||'U').charAt(0).toUpperCase()}</div><div class="pending-info"><h4>${x.accountName||maskEmail(x.email||'')}</h4><p>${formatDate(x.createdAt)} • ${x.bankName||''}</p></div></div><div style="text-align:right;"><div class="pending-amount">${formatNairaFull(x.netAmount||x.amount)}</div><span class="pending-badge">Pending</span></div></div>`; }); }
+
+      const userList = document.getElementById('recentUsersList');
+      const userSnap = await getDocs(query(collection(db,'users'),orderBy('createdAt','desc')));
+      if(userSnap.empty) userList.innerHTML='<div class="no-data">No users yet</div>';
+      else { userList.innerHTML=''; let c=0; userSnap.forEach(d=>{ if(c>=5) return; c++; const u=d.data(); userList.innerHTML+=`<div class="pending-item"><div style="display:flex;align-items:center;gap:10px;"><div class="pending-avatar">${(u.email||'U').charAt(0).toUpperCase()}</div><div class="pending-info"><h4>${maskEmail(u.email||'')}</h4><p>Joined: ${formatDate(u.createdAt)} • Ref: ${u.referralCode||'N/A'}</p></div></div><div style="text-align:right;"><div class="pending-amount">${formatNairaFull((u.depositWallet||0)+(u.withdrawalWallet||0))}</div><span style="font-size:0.7rem;color:var(--muted);">Balance</span></div></div>`; }); }
+
+      document.getElementById('lastUpdated').textContent = 'Just now';
+    } catch(e) { console.error(e); }
+  }
+
+  onAuthStateChanged(auth, async (u) => {
+    if(u) { const ad = await getDoc(doc(db,'adminUsers',u.uid)); if(ad.exists()&&ad.data().role==='admin') { document.getElementById('sidebarEmail')?.textContent = u.email||'Admin'; loadDashboard(); } else window.location.href='admin-login.html'; }
+    else window.location.href = 'admin-login.html';
+  });
+</script>
+</body>
+</html>
