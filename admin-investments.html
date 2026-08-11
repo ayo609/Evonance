@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
+  <title>Evonance – Admin Investments</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0a0e17; --card: #111827; --card-hover: #1a2332;
+      --primary: #f59e0b; --primary-dark: #d97706; --primary-soft: rgba(245,158,11,0.1);
+      --accent: #fbbf24; --text: #f1f5f9; --muted: #94a3b8; --border: #1e293b;
+      --input-bg: #0f172a; --success: #10b981; --error: #ef4444; --warning: #f59e0b;
+      --info: #3b82f6; --purple: #8b5cf6;
+    }
+    body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); min-height: 100vh; color: var(--text); display: flex; }
+    
+    .sidebar { width: 260px; min-height: 100vh; background: var(--card); border-right: 1px solid var(--border); padding: 20px 0; position: fixed; top: 0; left: 0; bottom: 0; z-index: 100; display: flex; flex-direction: column; overflow-y: auto; }
+    .sidebar-logo { display: flex; align-items: center; gap: 10px; padding: 0 20px 20px; border-bottom: 1px solid var(--border); margin-bottom: 16px; }
+    .sidebar-logo-icon { width: 38px; height: 38px; background: linear-gradient(135deg, var(--primary), #fbbf24); border-radius: 10px; display: flex; align-items: center; justify-content: center; }
+    .sidebar-logo-icon svg { width: 20px; height: 20px; color: #1a1a1a; }
+    .sidebar-brand { font-size: 1.1rem; font-weight: 800; color: var(--text); }
+    .sidebar-brand span { color: var(--primary); }
+    .sidebar-nav { flex: 1; padding: 0 12px; }
+    .sidebar-link { display: flex; align-items: center; gap: 10px; padding: 12px 16px; border-radius: 12px; color: var(--muted); text-decoration: none; font-size: 0.85rem; font-weight: 500; transition: all 0.2s; margin-bottom: 4px; }
+    .sidebar-link:hover { background: var(--card-hover); color: var(--text); }
+    .sidebar-link.active { background: var(--primary-soft); color: var(--primary); font-weight: 600; }
+    .sidebar-link svg { width: 20px; height: 20px; }
+    .sidebar-footer { padding: 16px 20px 0; border-top: 1px solid var(--border); margin-top: auto; }
+    .sidebar-user { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+    .sidebar-avatar { width: 36px; height: 36px; background: var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.85rem; color: #1a1a1a; }
+    .sidebar-user-info { flex: 1; }
+    .sidebar-user-name { font-size: 0.8rem; font-weight: 600; }
+    .sidebar-user-role { font-size: 0.68rem; color: var(--primary); }
+    .sidebar-logout { display: flex; align-items: center; gap: 8px; padding: 10px 14px; border-radius: 10px; color: #fca5a5; cursor: pointer; font-size: 0.82rem; font-weight: 500; transition: all 0.2s; background: none; border: none; width: 100%; font-family: inherit; }
+    .sidebar-logout:hover { background: rgba(239,68,68,0.1); }
+    .sidebar-logout svg { width: 18px; height: 18px; }
+    
+    .main-content { flex: 1; margin-left: 260px; padding: 24px; }
+    .page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
+    .page-title { font-size: 1.5rem; font-weight: 800; }
+    
+    .tabs { display: flex; gap: 4px; background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 4px; margin-bottom: 20px; }
+    .tab-btn { flex: 1; padding: 10px 14px; border: none; background: transparent; color: var(--muted); font-family: inherit; font-size: 0.82rem; font-weight: 600; cursor: pointer; border-radius: 12px; transition: all 0.3s; text-align: center; }
+    .tab-btn.active { background: var(--primary); color: #1a1a1a; }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    
+    .add-btn { padding: 10px 18px; background: var(--primary); color: #1a1a1a; border: none; border-radius: 50px; font-family: inherit; font-size: 0.82rem; font-weight: 700; cursor: pointer; }
+    .add-btn:hover { background: var(--primary-dark); }
+    
+    .plans-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 14px; }
+    .plan-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 20px; }
+    .plan-card h4 { font-size: 0.95rem; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+    .plan-card h4 span { font-size: 1.3rem; }
+    .plan-detail { display: flex; justify-content: space-between; padding: 6px 0; font-size: 0.78rem; border-bottom: 1px solid var(--border); }
+    .plan-detail:last-child { border-bottom: none; }
+    .plan-detail span:first-child { color: var(--muted); }
+    .plan-detail span:last-child { font-weight: 600; }
+    .plan-actions { display: flex; gap: 6px; margin-top: 12px; flex-wrap: wrap; }
+    .action-btn { flex: 1; padding: 7px; border-radius: 7px; font-family: inherit; font-size: 0.7rem; font-weight: 600; cursor: pointer; border: none; transition: all 0.2s; min-width: 50px; }
+    .action-btn.edit { background: var(--info); color: white; }
+    .action-btn.toggle { background: var(--warning); color: #1a1a1a; }
+    .action-btn.toggle.off { background: var(--error); color: white; }
+    .action-btn.delete { background: var(--error); color: white; }
+    .action-btn:hover { opacity: 0.8; }
+    
+    .investments-table { width: 100%; background: var(--card); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; }
+    .table-header { display: grid; grid-template-columns: 1.5fr 1.5fr 1fr 1fr 1fr 1fr 1.2fr; padding: 14px 16px; background: var(--input-bg); font-size: 0.7rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+    .table-row { display: grid; grid-template-columns: 1.5fr 1.5fr 1fr 1fr 1fr 1fr 1.2fr; padding: 14px 16px; border-bottom: 1px solid var(--border); font-size: 0.78rem; align-items: center; }
+    .table-row:last-child { border-bottom: none; }
+    .table-row:hover { background: var(--card-hover); }
+    .status-badge { display: inline-block; padding: 4px 10px; border-radius: 50px; font-size: 0.62rem; font-weight: 700; }
+    .status-badge.active { background: rgba(16,185,129,0.15); color: var(--success); }
+    .status-badge.completed { background: rgba(59,130,246,0.15); color: var(--info); }
+    
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 300; align-items: center; justify-content: center; padding: 20px; }
+    .modal-overlay.show { display: flex; }
+    .modal { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 28px; max-width: 500px; width: 100%; max-height: 90vh; overflow-y: auto; }
+    .modal h3 { font-size: 1.1rem; margin-bottom: 16px; text-align: center; }
+    .form-group { margin-bottom: 14px; }
+    .form-label { display: block; font-size: 0.78rem; font-weight: 600; color: var(--muted); margin-bottom: 6px; }
+    .form-input { width: 100%; height: 46px; background: var(--input-bg); border: 2px solid var(--border); border-radius: 12px; padding: 0 14px; font-family: inherit; font-size: 0.9rem; color: var(--text); outline: none; }
+    .form-input:focus { border-color: var(--primary); }
+    select.form-input { cursor: pointer; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .modal-buttons { display: flex; gap: 10px; margin-top: 20px; }
+    .modal-btn { flex: 1; padding: 12px; border-radius: 50px; font-family: inherit; font-size: 0.9rem; font-weight: 700; cursor: pointer; border: none; }
+    .modal-btn.cancel { background: var(--input-bg); color: var(--text); border: 1px solid var(--border); }
+    .modal-btn.confirm { background: var(--primary); color: #1a1a1a; }
+    .modal-btn.danger { background: var(--error); color: white; }
+    
+    .toast { position: fixed; top: 20px; right: 20px; background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 16px 24px; display: flex; align-items: center; gap: 12px; z-index: 1000; transform: translateX(120%); transition: transform 0.5s; box-shadow: 0 20px 40px rgba(0,0,0,0.5); max-width: 380px; }
+    .toast.show { transform: translateX(0); }
+    .toast.success { border-left: 4px solid var(--success); }
+    .toast-icon { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+    .toast.success .toast-icon { background: rgba(16,185,129,0.15); }
+    .toast-icon svg { width: 20px; height: 20px; color: var(--success); }
+    .toast-content h4 { font-size: 0.9rem; font-weight: 700; }
+    .toast-content p { font-size: 0.75rem; color: var(--muted); }
+    .no-data { text-align: center; padding: 40px; color: var(--muted); }
+    .search-bar { display: flex; gap: 10px; margin-bottom: 16px; }
+    .search-input { flex: 1; height: 42px; background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 0 14px; font-family: inherit; font-size: 0.85rem; color: var(--text); outline: none; }
+    .search-input:focus { border-color: var(--primary); }
+    
+    @media (max-width: 768px) { .sidebar { display: none; } .main-content { margin-left: 0; } .plans-grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="sidebar-logo"><div class="sidebar-logo-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg></div><span class="sidebar-brand">Ev<span>onance</span></span></div>
+  <nav class="sidebar-nav">
+    <a href="admin-dashboard.html" class="sidebar-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Dashboard</a>
+    <a href="admin-users.html" class="sidebar-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>Users</a>
+    <a href="admin-deposits.html" class="sidebar-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>Deposits</a>
+    <a href="admin-withdrawals.html" class="sidebar-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="12" y1="10" x2="12" y2="18"/><polyline points="9 15 12 18 15 15"/></svg>Withdrawals</a>
+    <a href="admin-investments.html" class="sidebar-link active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Investments</a>
+    <a href="admin-notifications.html" class="sidebar-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>Notifications</a>
+    <a href="admin-settings.html" class="sidebar-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>Settings</a>
+  </nav>
+  <div class="sidebar-footer"><div class="sidebar-user"><div class="sidebar-avatar">A</div><div class="sidebar-user-info"><div class="sidebar-user-name">Admin</div><div class="sidebar-user-role">Administrator</div></div></div><button class="sidebar-logout" onclick="handleLogout()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>Logout</button></div>
+</aside>
+
+<main class="main-content">
+  <div class="page-header">
+    <div><h1 class="page-title">Investment Management</h1><p style="color:var(--muted);font-size:0.85rem;">Manage standard plans, limited offers & VIP packages</p></div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('standard')">📊 Standard</button>
+    <button class="tab-btn" onclick="switchTab('limited')">⚡ Limited</button>
+    <button class="tab-btn" onclick="switchTab('vip')">👑 VIP</button>
+    <button class="tab-btn" onclick="switchTab('all')">📋 All</button>
+  </div>
+
+  <div class="tab-content active" id="tab-standard"><button class="add-btn" style="margin-bottom:14px;" onclick="saveQuantities()">💾 Save Quantities</button><div class="plans-grid" id="standardPlansGrid"></div></div>
+  <div class="tab-content" id="tab-limited"><button class="add-btn" style="margin-bottom:14px;" onclick="openAddModal('limited')">+ Add Limited</button><div class="plans-grid" id="limitedPlansGrid"><div class="no-data">Loading...</div></div></div>
+  <div class="tab-content" id="tab-vip"><button class="add-btn" style="margin-bottom:14px;" onclick="openAddModal('vip')">+ Add VIP</button><div class="plans-grid" id="vipPlansGrid"><div class="no-data">Loading...</div></div></div>
+  <div class="tab-content" id="tab-all">
+    <div class="search-bar"><input type="text" class="search-input" id="investmentSearch" placeholder="Search by email..." oninput="loadAllInvestments()" /></div>
+    <div class="investments-table"><div class="table-header"><span>User</span><span>Plan</span><span>Amount</span><span>Profit</span><span>Days</span><span>Status</span><span>Started</span></div><div id="allInvestmentsList"><div class="no-data">Loading...</div></div></div>
+  </div>
+</main>
+
+<!-- Add/Edit Modal -->
+<div class="modal-overlay" id="planModal">
+  <div class="modal">
+    <h3 id="modalTitle">Add Plan</h3>
+    <div class="form-group"><label class="form-label">Name</label><input type="text" class="form-input" id="planName" /></div>
+    <div class="form-group"><label class="form-label">Emoji</label><input type="text" class="form-input" id="planEmoji" value="🔥" /></div>
+    <div class="form-row"><div class="form-group"><label class="form-label">Investment (₦)</label><input type="number" class="form-input" id="planInvest" /></div><div class="form-group"><label class="form-label">Profit (₦)</label><input type="number" class="form-input" id="planProfit" /></div></div>
+    <div class="form-row"><div class="form-group"><label class="form-label">Duration (Days)</label><input type="number" class="form-input" id="planDays" /></div><div class="form-group"><label class="form-label">Max Quantity</label><input type="number" class="form-input" id="planQty" placeholder="Leave empty for unlimited" /></div></div>
+    <div class="form-row" id="dateRow" style="display:none;"><div class="form-group"><label class="form-label">Start</label><input type="datetime-local" class="form-input" id="planStart" /></div><div class="form-group"><label class="form-label">End</label><input type="datetime-local" class="form-input" id="planEnd" /></div></div>
+    <div class="modal-buttons"><button class="modal-btn cancel" onclick="closePlanModal()">Cancel</button><button class="modal-btn confirm" onclick="savePlan()">Save</button></div>
+  </div>
+</div>
+
+<div class="toast success" id="toast"><div class="toast-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div><div class="toast-content"><h4>Success</h4><p id="toastMsg"></p></div></div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+  import { getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc, collection, query, orderBy, getDocs, serverTimestamp, addDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+  const firebaseConfig = { apiKey: "AIzaSyDT0ACobk5YMFgrqxb-VOnfELXTyssrOtA", authDomain: "newpro-d830e.firebaseapp.com", projectId: "newpro-d830e", storageBucket: "newpro-d830e.firebasestorage.app", messagingSenderId: "642315724384", appId: "1:642315724384:web:19def936898718e9300505" };
+  const app = initializeApp(firebaseConfig); const auth = getAuth(app); const db = getFirestore(app);
+
+  const STANDARD_PLANS = [
+    { id: 1, name: 'Starter Plan', emoji: '🥉', invest: 7000, profit: 2800, days: 2, total: 9800, icon: 'bronze' },
+    { id: 2, name: 'Basic Plan', emoji: '🥈', invest: 15000, profit: 7000, days: 6, total: 22000, icon: 'silver' },
+    { id: 3, name: 'Standard Plan', emoji: '🥇', invest: 25000, profit: 11000, days: 10, total: 36000, icon: 'gold' },
+    { id: 4, name: 'Premium Plan', emoji: '💎', invest: 45000, profit: 25000, days: 20, total: 70000, icon: 'platinum' },
+    { id: 5, name: 'Business Plan', emoji: '💼', invest: 70000, profit: 70000, days: 30, total: 140000, icon: 'diamond' },
+    { id: 6, name: 'Executive Plan', emoji: '👑', invest: 100000, profit: 120000, days: 40, total: 220000, icon: 'vip' },
+    { id: 7, name: 'Elite Plan', emoji: '🚀', invest: 150000, profit: 300000, days: 50, total: 450000, icon: 'elite' },
+    { id: 8, name: 'Legend Plan', emoji: '🏆', invest: 200000, profit: 500000, days: 60, total: 700000, icon: 'legend' },
+    { id: 9, name: 'Ultimate Plan', emoji: '🌟', invest: 300000, profit: 1200000, days: 90, total: 1500000, icon: 'ultimate' }
+  ];
+
+  let currentEditId = null, currentPlanType = 'limited', currentTab = 'standard';
+
+  function showToast(msg) { const t = document.getElementById('toast'); document.getElementById('toastMsg').textContent = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 3000); }
+  function formatNaira(a) { return '₦' + Number(a).toLocaleString('en-NG', { minimumFractionDigits: 2 }); }
+  function formatDate(ts) { if(!ts) return ''; const d = ts.toDate?ts.toDate():new Date(ts); return d.toLocaleDateString('en-NG',{month:'short',day:'numeric',year:'numeric'}); }
+  function maskEmail(e) { if(!e) return ''; const p = e.split('@'); return p[0].substring(0,4)+'***@'+p[1]; }
+
+  window.handleLogout = async () => { await signOut(auth); window.location.href = 'admin-login.html'; };
+
+  window.switchTab = (tab) => {
+    currentTab = tab;
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    const tabs = ['standard','limited','vip','all'];
+    const idx = tabs.indexOf(tab);
+    if(idx>=0) {
+      document.querySelectorAll('.tab-btn')[idx].classList.add('active');
+      document.getElementById('tab-'+tab).classList.add('active');
+      if(tab==='standard') renderStandardPlans();
+      if(tab==='limited') loadPlans('limitedPlans','limitedPlansGrid');
+      if(tab==='vip') loadPlans('vipPlans','vipPlansGrid');
+      if(tab==='all') loadAllInvestments();
+    }
+  };
+
+  // ============ STANDARD PLANS WITH QUANTITY ============
+  async function renderStandardPlans() {
+    const qSnap = await getDoc(doc(db,'planSettings','quantities'));
+    const quantities = qSnap.exists() ? qSnap.data() : {};
+    
+    document.getElementById('standardPlansGrid').innerHTML = STANDARD_PLANS.map(p => {
+      const qtyKey = 'plan_'+p.id;
+      const maxQty = quantities[qtyKey] !== undefined ? quantities[qtyKey] : '';
+      const sold = quantities[qtyKey+'_sold'] || 0;
+      return `
+      <div class="plan-card">
+        <h4><span>${p.emoji}</span>${p.name} ${maxQty ? `<span style="font-size:0.65rem;color:${sold>=maxQty?'var(--error)':'var(--success)'};">${sold}/${maxQty} sold</span>` : ''}</h4>
+        <div class="plan-detail"><span>Investment</span><span>${formatNaira(p.invest)}</span></div>
+        <div class="plan-detail"><span>Profit</span><span style="color:var(--success);">+${formatNaira(p.profit)}</span></div>
+        <div class="plan-detail"><span>Duration</span><span>${p.days} Days</span></div>
+        <div class="plan-detail"><span>Total</span><span style="color:var(--success);">${formatNaira(p.total)}</span></div>
+        <div class="form-group" style="margin-top:8px;"><label class="form-label" style="font-size:0.7rem;">Max Quantity (empty = unlimited)</label><input type="number" class="form-input" id="qty_${p.id}" value="${maxQty}" placeholder="Unlimited" style="height:38px;font-size:0.8rem;" onchange="updateQtyField(${p.id},this.value)" /></div>
+        <div class="plan-actions"><button class="action-btn edit" onclick="editStandardPlan(${p.id})">✏️ Edit</button></div>
+      </div>`;
+    }).join('');
+  }
+
+  window.updateQtyField = function(planId, val) {
+    // Store in a temp object, saved when "Save Quantities" is clicked
+    if(!window._qtyChanges) window._qtyChanges = {};
+    window._qtyChanges['plan_'+planId] = val === '' ? null : parseInt(val);
+  };
+
+  window.saveQuantities = async function() {
+    if(!window._qtyChanges || Object.keys(window._qtyChanges).length === 0) { showToast('No changes to save'); return; }
+    try {
+      const updates = {};
+      Object.keys(window._qtyChanges).forEach(key => { updates[key] = window._qtyChanges[key]; });
+      await setDoc(doc(db,'planSettings','quantities'), updates, { merge: true });
+      window._qtyChanges = {};
+      showToast('Quantities saved!');
+      renderStandardPlans();
+    } catch(e) { showToast('Error saving quantities'); }
+  };
+
+  window.editStandardPlan = (id) => {
+    const p = STANDARD_PLANS.find(x => x.id === id);
+    if(!p) return;
+    currentEditId = id; currentPlanType = 'standard';
+    document.getElementById('modalTitle').textContent = '✏️ Edit Standard Plan';
+    document.getElementById('planName').value = p.name;
+    document.getElementById('planEmoji').value = p.emoji;
+    document.getElementById('planInvest').value = p.invest;
+    document.getElementById('planProfit').value = p.profit;
+    document.getElementById('planDays').value = p.days;
+    document.getElementById('planQty').parentElement.style.display = 'none';
+    document.getElementById('dateRow').style.display = 'none';
+    document.getElementById('planModal').classList.add('show');
+  };
+
+  // ============ LIMITED & VIP PLANS ============
+  async function loadPlans(coll, gridId) {
+    const grid = document.getElementById(gridId);
+    try {
+      const q = query(collection(db,coll), orderBy('name'));
+      const snap = await getDocs(q);
+      if(snap.empty) { grid.innerHTML = '<div class="no-data">No plans yet.</div>'; return; }
+      grid.innerHTML = '';
+      snap.forEach(d => {
+        const p = d.data();
+        const maxQty = p.maxQty||0, sold = p.sold||0;
+        grid.innerHTML += `
+          <div class="plan-card">
+            <h4><span>${p.emoji||'🔥'}</span>${p.name} <span style="font-size:0.6rem;color:${p.active?'var(--success)':'var(--error)'};">${p.active?'● Active':'○ Inactive'}</span>${maxQty?` <span style="font-size:0.6rem;color:var(--warning);">${sold}/${maxQty} sold</span>`:''}</h4>
+            <div class="plan-detail"><span>Investment</span><span>${formatNaira(p.invest)}</span></div>
+            <div class="plan-detail"><span>Profit</span><span style="color:var(--success);">+${formatNaira(p.profit)}</span></div>
+            <div class="plan-detail"><span>Duration</span><span>${p.days} Days</span></div>
+            <div class="plan-detail"><span>Total</span><span style="color:var(--success);">${formatNaira(p.total)}</span></div>
+            ${maxQty?`<div class="plan-detail"><span>Max Qty</span><span>${maxQty}</span></div>`:''}
+            ${p.startDate?`<div class="plan-detail"><span>Starts</span><span>${formatDate(p.startDate)}</span></div>`:''}
+            ${p.endDate?`<div class="plan-detail"><span>Ends</span><span>${formatDate(p.endDate)}</span></div>`:''}
+            <div class="plan-actions">
+              <button class="action-btn edit" onclick="editPlan('${d.id}','${coll}')">✏️ Edit</button>
+              <button class="action-btn toggle ${p.active?'':'off'}" onclick="togglePlan('${d.id}','${coll}',${p.active})">${p.active?'Deactivate':'Activate'}</button>
+              <button class="action-btn delete" onclick="deletePlan('${d.id}','${coll}')">🗑️</button>
+            </div>
+          </div>`;
+      });
+    } catch(e) { console.error(e); }
+  }
+
+  window.openAddModal = (type) => {
+    currentEditId = null; currentPlanType = type;
+    document.getElementById('modalTitle').textContent = type==='limited'?'⚡ Add Limited Plan':'👑 Add VIP Package';
+    document.getElementById('planName').value=''; document.getElementById('planEmoji').value='🔥';
+    document.getElementById('planInvest').value=''; document.getElementById('planProfit').value='';
+    document.getElementById('planDays').value=''; document.getElementById('planQty').value='';
+    document.getElementById('planQty').parentElement.style.display = 'block';
+    document.getElementById('dateRow').style.display = type==='limited'?'grid':'none';
+    document.getElementById('planStart').value=''; document.getElementById('planEnd').value='';
+    document.getElementById('planModal').classList.add('show');
+  };
+
+  window.editPlan = async (id, coll) => {
+    const snap = await getDoc(doc(db,coll,id));
+    if(!snap.exists()) return;
+    const p = snap.data();
+    currentEditId = id; currentPlanType = coll;
+    document.getElementById('modalTitle').textContent = '✏️ Edit Plan';
+    document.getElementById('planName').value = p.name||'';
+    document.getElementById('planEmoji').value = p.emoji||'🔥';
+    document.getElementById('planInvest').value = p.invest||'';
+    document.getElementById('planProfit').value = p.profit||'';
+    document.getElementById('planDays').value = p.days||'';
+    document.getElementById('planQty').value = p.maxQty||'';
+    document.getElementById('planQty').parentElement.style.display = 'block';
+    document.getElementById('dateRow').style.display = coll==='limitedPlans'?'grid':'none';
+    if(p.startDate?.toDate) document.getElementById('planStart').value = p.startDate.toDate().toISOString().slice(0,16);
+    if(p.endDate?.toDate) document.getElementById('planEnd').value = p.endDate.toDate().toISOString().slice(0,16);
+    document.getElementById('planModal').classList.add('show');
+  };
+
+  window.closePlanModal = () => document.getElementById('planModal').classList.remove('show');
+
+  window.savePlan = async () => {
+    const name = document.getElementById('planName').value.trim();
+    const emoji = document.getElementById('planEmoji').value.trim()||'🔥';
+    const invest = Number(document.getElementById('planInvest').value);
+    const profit = Number(document.getElementById('planProfit').value);
+    const days = Number(document.getElementById('planDays').value);
+    const qtyVal = document.getElementById('planQty').value;
+    const maxQty = qtyVal === '' ? null : parseInt(qtyVal);
+    const startDate = document.getElementById('planStart').value ? new Date(document.getElementById('planStart').value) : null;
+    const endDate = document.getElementById('planEnd').value ? new Date(document.getElementById('planEnd').value) : null;
+
+    if(!name||!invest||!profit||!days) { showToast('Fill all required fields'); return; }
+
+    const data = { name, emoji, invest, profit, days, total: invest+profit, maxQty, active: true, updatedAt: serverTimestamp() };
+    if(startDate) data.startDate = startDate;
+    if(endDate) data.endDate = endDate;
+
+    try {
+      if(currentPlanType==='standard') {
+        const p = STANDARD_PLANS.find(x=>x.id===currentEditId);
+        if(p) { p.name=name; p.emoji=emoji; p.invest=invest; p.profit=profit; p.days=days; p.total=invest+profit; }
+      } else {
+        const coll = currentPlanType==='limited'?'limitedPlans':'vipPlans';
+        if(currentEditId) await updateDoc(doc(db,coll,currentEditId), data);
+        else await addDoc(collection(db,coll), { ...data, createdAt: serverTimestamp() });
+      }
+      closePlanModal(); showToast('Plan saved!');
+      if(currentTab==='standard') renderStandardPlans();
+      else if(currentTab==='limited') loadPlans('limitedPlans','limitedPlansGrid');
+      else loadPlans('vipPlans','vipPlansGrid');
+    } catch(e) { showToast('Error saving'); }
+  };
+
+  window.togglePlan = async (id, coll, cur) => { await updateDoc(doc(db,coll,id),{active:!cur}); showToast(`Plan ${cur?'deactivated':'activated'}!`); loadPlans(coll,coll==='limitedPlans'?'limitedPlansGrid':'vipPlansGrid'); };
+  window.deletePlan = async (id, coll) => { if(!confirm('Delete permanently?')) return; await deleteDoc(doc(db,coll,id)); showToast('Deleted!'); loadPlans(coll,coll==='limitedPlans'?'limitedPlansGrid':'vipPlansGrid'); };
+
+  async function loadAllInvestments() {
+    const list = document.getElementById('allInvestmentsList');
+    const search = document.getElementById('investmentSearch').value.toLowerCase();
+    try {
+      const q = query(collection(db,'investments'), orderBy('createdAt','desc'));
+      const snap = await getDocs(q);
+      if(snap.empty) { list.innerHTML='<div class="no-data">No investments</div>'; return; }
+      let invs = [];
+      for(const d of snap.docs) { const i=d.data(); const us=await getDoc(doc(db,'users',i.uid)); i.email=us.exists()?us.data().email:'Unknown'; invs.push(i); }
+      if(search) invs = invs.filter(i=>(i.email||'').toLowerCase().includes(search)||(i.planName||'').toLowerCase().includes(search));
+      list.innerHTML = invs.map(i=>`<div class="table-row"><span>${maskEmail(i.email)}</span><span>${i.planName||'N/A'}${i.quantity>1?` (x${i.quantity})`:''}</span><span>${formatNaira(i.amount)}</span><span style="color:var(--success);">${formatNaira(i.totalProfit||0)}</span><span>${i.totalDays||0}d</span><span><span class="status-badge ${i.status}">${i.status}</span></span><span>${formatDate(i.createdAt)}</span></div>`).join('');
+    } catch(e) { console.error(e); }
+  }
+
+  onAuthStateChanged(auth, async (u) => {
+    if(u) { const ad = await getDoc(doc(db,'adminUsers',u.uid)); if(ad.exists()&&ad.data().role==='admin') renderStandardPlans(); else window.location.href='admin-login.html'; }
+    else window.location.href = 'admin-login.html';
+  });
+</script>
+</body>
+</html>
