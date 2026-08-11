@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Evonance – Transfer Monitor</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0f172a; --card: #1e293b; --card-hover: #334155; --primary: #10b981;
+      --primary-dark: #059669; --primary-soft: rgba(16,185,129,0.1); --accent: #34d399;
+      --text: #f1f5f9; --muted: #94a3b8; --border: #334155; --input-bg: #0f172a;
+      --success: #10b981; --error: #ef4444; --warning: #f59e0b; --info: #3b82f6;
+    }
+    body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); min-height: 100vh; color: var(--text); padding-bottom: 40px; }
+
+    .toast { position: fixed; top: 20px; right: 20px; background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 16px 24px; display: flex; align-items: center; gap: 12px; z-index: 1000; transform: translateX(120%); transition: transform 0.5s cubic-bezier(0.68,-0.55,0.27,1.55); box-shadow: 0 20px 40px rgba(0,0,0,0.3); max-width: 400px; }
+    .toast.show { transform: translateX(0); }
+    .toast.success { border-left: 4px solid var(--success); }
+    .toast.error { border-left: 4px solid var(--error); }
+    .toast-icon { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .toast.success .toast-icon { background: rgba(16,185,129,0.15); }
+    .toast.error .toast-icon { background: rgba(239,68,68,0.15); }
+    .toast-icon svg { width: 24px; height: 24px; }
+    .toast.success .toast-icon svg { color: var(--success); }
+    .toast.error .toast-icon svg { color: var(--error); }
+    .toast-content h4 { font-size: 0.95rem; font-weight: 700; color: var(--text); margin-bottom: 2px; }
+    .toast-content p { font-size: 0.8rem; color: var(--muted); line-height: 1.3; }
+
+    .header { background: var(--card); border-bottom: 1px solid var(--border); padding: 16px 20px; position: sticky; top: 0; z-index: 100; }
+    .header-content { display: flex; align-items: center; justify-content: space-between; max-width: 1200px; margin: 0 auto; }
+    .header-left { display: flex; align-items: center; gap: 12px; }
+    .back-btn { background: none; border: none; color: var(--muted); cursor: pointer; padding: 8px; border-radius: 10px; display: flex; transition: all 0.2s; text-decoration: none; }
+    .back-btn:hover { background: var(--card-hover); color: var(--text); }
+    .back-btn svg { width: 24px; height: 24px; }
+    .header-title { font-size: 1.2rem; font-weight: 800; }
+    .live-badge { display: flex; align-items: center; gap: 6px; background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.3); border-radius: 50px; padding: 6px 14px; font-size: 0.75rem; font-weight: 700; color: var(--accent); }
+    .live-dot { width: 8px; height: 8px; background: var(--success); border-radius: 50%; animation: pulse 2s infinite; }
+    @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+    .main-content { max-width: 1200px; margin: 0 auto; padding: 20px; }
+
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 24px; }
+    .stat-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 20px; }
+    .stat-label { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+    .stat-value { font-size: 1.6rem; font-weight: 800; }
+
+    .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; margin-top: 32px; }
+    .section-title { font-size: 1.1rem; font-weight: 800; display: flex; align-items: center; gap: 8px; }
+    .section-title svg { width: 22px; height: 22px; color: var(--primary); }
+
+    .monitor-table { width: 100%; border-collapse: separate; border-spacing: 0; background: var(--card); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; }
+    .monitor-table th { background: rgba(15,23,42,0.5); padding: 14px 16px; text-align: left; font-size: 0.75rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid var(--border); }
+    .monitor-table td { padding: 14px 16px; font-size: 0.85rem; border-bottom: 1px solid var(--border); }
+    .monitor-table tr:last-child td { border-bottom: none; }
+    .monitor-table tr:hover td { background: rgba(51,65,85,0.2); }
+
+    .status-pill { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; }
+    .status-pill.pending { background: rgba(245,158,11,0.1); color: var(--warning); border: 1px solid rgba(245,158,11,0.3); }
+    .status-pill.processing { background: rgba(59,130,246,0.1); color: var(--info); border: 1px solid rgba(59,130,246,0.3); }
+    .status-pill.completed { background: rgba(16,185,129,0.1); color: var(--success); border: 1px solid rgba(16,185,129,0.3); }
+    .status-pill.failed { background: rgba(239,68,68,0.1); color: var(--error); border: 1px solid rgba(239,68,68,0.3); }
+
+    .check-btn { background: var(--input-bg); border: 1px solid var(--border); color: var(--text); padding: 6px 14px; border-radius: 8px; font-family: inherit; font-size: 0.78rem; font-weight: 600; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
+    .check-btn:hover:not(:disabled) { border-color: var(--primary); color: var(--accent); }
+    .check-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .check-btn .spin { width: 12px; height: 12px; border: 2px solid rgba(255,255,255,0.2); border-top-color: var(--primary); border-radius: 50%; animation: spin 0.6s linear infinite; display: none; }
+    .check-btn.loading .spin { display: inline-block; }
+
+    .amount-cell { font-weight: 700; font-family: monospace; }
+    .net-cell { color: var(--success); font-weight: 700; }
+    .ref-cell { font-size: 0.7rem; color: var(--muted); font-family: monospace; word-break: break-all; max-width: 140px; }
+
+    .empty-state { text-align: center; padding: 60px 20px; color: var(--muted); background: var(--card); border: 1px solid var(--border); border-radius: 16px; }
+    .empty-state svg { width: 48px; height: 48px; margin-bottom: 12px; opacity: 0.3; }
+
+    .log-box { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 16px; margin-top: 24px; max-height: 300px; overflow-y: auto; }
+    .log-title { font-size: 0.85rem; font-weight: 700; margin-bottom: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+    .log-entry { font-size: 0.78rem; padding: 6px 0; border-bottom: 1px solid rgba(51,65,85,0.3); font-family: monospace; }
+    .log-entry:last-child { border-bottom: none; }
+    .log-time { color: var(--muted); margin-right: 8px; }
+    .log-success { color: var(--success); }
+    .log-error { color: var(--error); }
+    .log-info { color: var(--info); }
+
+    .auto-check-bar { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+    .auto-check-text { font-size: 0.85rem; color: var(--muted); }
+    .auto-check-btn { background: linear-gradient(135deg, var(--primary), var(--primary-dark)); color: white; border: none; border-radius: 10px; padding: 8px 18px; font-family: inherit; font-size: 0.8rem; font-weight: 700; cursor: pointer; transition: all 0.2s; }
+    .auto-check-btn:hover:not(:disabled) { box-shadow: 0 8px 20px rgba(16,185,129,0.3); }
+    .auto-check-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    @media (max-width: 768px) {
+      .monitor-table { display: block; overflow-x: auto; }
+      .stats-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+  </style>
+</head>
+<body>
+
+<div class="toast success" id="toast"><div class="toast-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div><div class="toast-content"><h4 id="toastTitle">Success</h4><p id="toastMessage"></p></div></div>
+
+<header class="header">
+  <div class="header-content">
+    <div class="header-left">
+      <a href="admin-withdrawals.html" class="back-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg></a>
+      <span class="header-title">Transfer Monitor</span>
+    </div>
+    <div class="live-badge"><span class="live-dot"></span> Live</div>
+  </div>
+</header>
+
+<main class="main-content">
+
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-label">Pending</div>
+      <div class="stat-value" style="color:var(--warning)" id="statPending">0</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Processing</div>
+      <div class="stat-value" style="color:var(--info)" id="statProcessing">0</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Completed</div>
+      <div class="stat-value" style="color:var(--success)" id="statCompleted">0</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Failed</div>
+      <div class="stat-value" style="color:var(--error)" id="statFailed">0</div>
+    </div>
+  </div>
+
+  <div class="auto-check-bar">
+    <div class="auto-check-text">Check all processing transfers against Flutterwave</div>
+    <button class="auto-check-btn" id="autoCheckBtn" onclick="checkAllProcessing()">🔄 Check All</button>
+  </div>
+
+  <div class="section-header">
+    <div class="section-title">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      Active Transfers
+    </div>
+  </div>
+
+  <div style="overflow-x:auto;">
+    <table class="monitor-table">
+      <thead>
+        <tr>
+          <th>Status</th>
+          <th>User</th>
+          <th>Bank</th>
+          <th>Account</th>
+          <th>Amount</th>
+          <th>Net</th>
+          <th>Reference</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody id="transfersBody">
+        <tr><td colspan="8"><div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><p>Loading transfers...</p></div></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="log-box">
+    <div class="log-title">📝 Activity Log</div>
+    <div id="logContainer">
+      <div class="log-entry"><span class="log-time">--:--:--</span> <span class="log-info">Monitor initialized. Waiting for data...</span></div>
+    </div>
+  </div>
+
+</main>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+  import { getFirestore, collection, query, where, orderBy, onSnapshot, doc, updateDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+  const firebaseConfig = { apiKey: "AIzaSyDT0ACobk5YMFgrqxb-VOnfELXTyssrOtA", authDomain: "newpro-d830e.firebaseapp.com", projectId: "newpro-d830e", storageBucket: "newpro-d830e.firebasestorage.app", messagingSenderId: "642315724384", appId: "1:642315724384:web:19def936898718e9300505" };
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+
+  const FLW_SECRET_KEY = "FLWSECK-a48127ddd28d0a14842e99613a4a978f-19ff176de08vt-X";
+
+  const NIGERIAN_BANKS = [
+    { name: "Access Bank", code: "044" },{ name: "Access Bank (Diamond)", code: "063" },{ name: "ALAT by WEMA", code: "035A" },
+    { name: "ASO Savings and Loans", code: "401" },{ name: "CEMCS Microfinance Bank", code: "50823" },
+    { name: "Citibank Nigeria", code: "023" },{ name: "Ecobank Nigeria", code: "050" },
+    { name: "Ekondo Microfinance Bank", code: "562" },{ name: "Fidelity Bank", code: "070" },
+    { name: "First Bank of Nigeria", code: "011" },{ name: "First City Monument Bank (FCMB)", code: "214" },
+    { name: "Globus Bank", code: "00103" },{ name: "Guaranty Trust Bank (GTBank)", code: "058" },
+    { name: "Heritage Bank", code: "030" },{ name: "Jaiz Bank", code: "301" },
+    { name: "Keystone Bank", code: "082" },{ name: "Kuda Bank", code: "50211" },
+    { name: "Opay", code: "999992" },{ name: "PalmPay", code: "999991" },
+    { name: "Parallex Bank", code: "104" },{ name: "Paycom (OPay)", code: "100004" },
+    { name: "Polaris Bank", code: "076" },{ name: "PremiumTrust Bank", code: "105" },
+    { name: "Providus Bank", code: "101" },{ name: "Rubies MFB", code: "125" },
+    { name: "Sparkle Microfinance Bank", code: "51310" },{ name: "Stanbic IBTC Bank", code: "221" },
+    { name: "Standard Chartered Bank", code: "068" },{ name: "Sterling Bank", code: "232" },
+    { name: "SunTrust Bank", code: "100" },{ name: "Taj Bank", code: "302" },
+    { name: "Titan Trust Bank", code: "102" },{ name: "Union Bank of Nigeria", code: "032" },
+    { name: "United Bank for Africa (UBA)", code: "033" },{ name: "Unity Bank", code: "215" },
+    { name: "VFD Microfinance Bank", code: "566" },{ name: "Wema Bank", code: "035" },
+    { name: "Zenith Bank", code: "057" }
+  ];
+
+  function getBankName(code) { const b = NIGERIAN_BANKS.find(x=>x.code===code); return b ? b.name : code; }
+  function formatNaira(a) { return '₦'+Number(a).toLocaleString('en-NG',{minimumFractionDigits:2}); }
+  function showToast(type, title, msg, d=4000) {
+    const t = document.getElementById('toast');
+    t.className = 'toast ' + type;
+    document.getElementById('toastTitle').textContent = title;
+    document.getElementById('toastMessage').textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), d);
+  }
+  function addLog(message, type='info') {
+    const container = document.getElementById('logContainer');
+    const time = new Date().toLocaleTimeString('en-NG');
+    const colorClass = type === 'success' ? 'log-success' : type === 'error' ? 'log-error' : 'log-info';
+    const entry = document.createElement('div');
+    entry.className = 'log-entry';
+    entry.innerHTML = `<span class="log-time">${time}</span> <span class="${colorClass}">${message}</span>`;
+    container.insertBefore(entry, container.firstChild);
+    if (container.children.length > 50) container.lastChild.remove();
+  }
+
+  // ============ AUTH GUARD ============
+  onAuthStateChanged(auth, async (user) => {
+    if (!user) { window.location.href = 'login.html'; return; }
+    const snap = await getDoc(doc(db, 'users', user.uid));
+    if (!snap.exists() || !snap.data().isAdmin) {
+      showToast('error', 'Access Denied', 'Admins only.');
+      setTimeout(() => window.location.href = 'dashboard.html', 2000);
+      return;
+    }
+    listenTransfers();
+  });
+
+  let allDocs = [];
+
+  // ============ REAL-TIME LISTENER ============
+  function listenTransfers() {
+    const q = query(collection(db, 'withdrawals'), orderBy('createdAt', 'desc'));
+    onSnapshot(q, (snapshot) => {
+      allDocs = snapshot.docs;
+      renderTable(snapshot.docs);
+      updateStats(snapshot.docs);
+    }, (err) => {
+      console.error(err);
+      addLog('Firestore listener error: ' + err.message, 'error');
+    });
+  }
+
+  function updateStats(docs) {
+    let p=0, pr=0, c=0, f=0;
+    docs.forEach(d => {
+      const s = d.data().status;
+      if(s==='pending') p++;
+      else if(s==='processing') pr++;
+      else if(s==='completed') c++;
+      else if(s==='failed') f++;
+    });
+    document.getElementById('statPending').textContent = p;
+    document.getElementById('statProcessing').textContent = pr;
+    document.getElementById('statCompleted').textContent = c;
+    document.getElementById('statFailed').textContent = f;
+  }
+
+  function renderTable(docs) {
+    const tbody = document.getElementById('transfersBody');
+    if (docs.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><p>No transfers found</p></div></td></tr>`;
+      return;
+    }
+    tbody.innerHTML = docs.map(d => {
+      const data = d.data();
+      const status = data.status || 'pending';
+      const statusClass = status === 'pending' ? 'pending' : status === 'processing' ? 'processing' : status === 'completed' ? 'completed' : 'failed';
+      const bankName = getBankName(data.bankCode);
+      const canCheck = status === 'processing' && data.transferId;
+      return `
+        <tr id="row-${d.id}">
+          <td><span class="status-pill ${statusClass}">${status}</span></td>
+          <td>${data.email || 'N/A'}</td>
+          <td>${bankName}</td>
+          <td style="font-family:monospace">${data.accountNumber}</td>
+          <td class="amount-cell">${formatNaira(data.amount)}</td>
+          <td class="net-cell">${formatNaira(data.netAmount)}</td>
+          <td class="ref-cell">${data.transferRef || '-'}</td>
+          <td>
+            ${canCheck ? `<button class="check-btn" id="btn-${d.id}" onclick="checkTransfer('${d.id}', ${data.transferId})"><span class="spin"></span>Check Status</button>` : 
+              status === 'completed' ? '<span style="color:var(--success);font-size:0.8rem">✓ Settled</span>' :
+              status === 'failed' ? '<span style="color:var(--error);font-size:0.8rem">✗ Failed</span>' :
+              '<span style="color:var(--muted);font-size:0.8rem">Waiting...</span>'}
+          </td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  // ============ CHECK SINGLE TRANSFER ============
+  window.checkTransfer = async function(docId, transferId) {
+    const btn = document.getElementById(`btn-${docId}`);
+    if (!btn) return;
+    btn.disabled = true;
+    btn.classList.add('loading');
+    
+    try {
+      addLog(`Checking transfer #${transferId}...`);
+      const res = await fetch(`https://api.flutterwave.com/v3/transfers/${transferId}`, {
+        method: 'GET',
+        headers: { 'Authorization': `Bearer ${FLW_SECRET_KEY}`, 'Content-Type': 'application/json' }
+      });
+      const data = await res.json();
+      console.log('Transfer status:', data);
+      
+      if (data.status === 'success' && data.data) {
+        const tx = data.data;
+        const flwStatus = tx.status; // SUCCESSFUL, FAILED, PENDING, NEW
+        
+        if (flwStatus === 'SUCCESSFUL') {
+          await updateDoc(doc(db, 'withdrawals', docId), {
+            status: 'completed',
+            flwFinalStatus: flwStatus,
+            flwUpdatedAt: new Date().toISOString()
+          });
+          // Update matching transaction
+          const wDoc = allDocs.find(d => d.id === docId)?.data();
+          if (wDoc) {
+            const txQuery = query(collection(db, 'transactions'), where('uid', '==', wDoc.uid), where('type', '==', 'withdrawal'), where('amount', '==', wDoc.amount), where('status', '==', 'processing'));
+            const txSnap = await getDocs(txQuery);
+            if (!txSnap.empty) {
+              await updateDoc(doc(db, 'transactions', txSnap.docs[0].id), { status: 'completed', processedAt: serverTimestamp() });
+            }
+          }
+          addLog(`Transfer #${transferId} → COMPLETED ✅`, 'success');
+          showToast('success', 'Transfer Completed', `The user has received the money.`);
+        } else if (flwStatus === 'FAILED') {
+          await updateDoc(doc(db, 'withdrawals', docId), {
+            status: 'failed',
+            flwFinalStatus: flwStatus,
+            flwFailReason: tx.complete_message || 'Unknown',
+            flwUpdatedAt: new Date().toISOString()
+          });
+          addLog(`Transfer #${transferId} → FAILED ❌ (${tx.complete_message || 'Unknown'})`, 'error');
+          showToast('error', 'Transfer Failed', tx.complete_message || 'Bank rejected the transfer.');
+        } else {
+          // PENDING or NEW
+          addLog(`Transfer #${transferId} → still ${flwStatus} ⏳`, 'info');
+          showToast('warning', 'Still Processing', `Status: ${flwStatus}. Check again later.`);
+        }
+      } else {
+        throw new Error(data.message || 'Invalid response from Flutterwave');
+      }
+    } catch (e) {
+      console.error(e);
+      addLog(`Check failed for #${transferId}: ${e.message}`, 'error');
+      showToast('error', 'Check Failed', e.message);
+    } finally {
+      btn.disabled = false;
+      btn.classList.remove('loading');
+    }
+  };
+
+  // ============ CHECK ALL PROCESSING ============
+  window.checkAllProcessing = async function() {
+    const btn = document.getElementById('autoCheckBtn');
+    btn.disabled = true;
+    btn.textContent = 'Checking...';
+    
+    const processing = allDocs.filter(d => d.data().status === 'processing' && d.data().transferId);
+    if (processing.length === 0) {
+      addLog('No processing transfers to check.', 'info');
+      showToast('info', 'Nothing to Check', 'No transfers in processing state.');
+      btn.disabled = false;
+      btn.textContent = '🔄 Check All';
+      return;
+    }
+    
+    addLog(`Auto-checking ${processing.length} processing transfer(s)...`);
+    
+    for (const d of processing) {
+      await checkTransfer(d.id, d.data().transferId);
+      await new Promise(r => setTimeout(r, 1200)); // Rate limit friendly
+    }
+    
+    addLog('Auto-check complete.', 'success');
+    btn.disabled = false;
+    btn.textContent = '🔄 Check All';
+  };
+</script>
+</body>
+</html>
