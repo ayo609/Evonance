@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
+  <title>Evonance – Deposit</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Playfair+Display:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #060b14;
+      --surface: #0b1120;
+      --elevated: #111b2e;
+      --elevated-hover: #162032;
+      --primary: #10b981;
+      --primary-glow: #34d399;
+      --primary-muted: rgba(16,185,129,0.08);
+      --blue: #3b82f6;
+      --blue-muted: rgba(59,130,246,0.08);
+      --blue-glow: #60a5fa;
+      --gold: #f0b90b;
+      --text: #e8edf5;
+      --text-secondary: #8896b4;
+      --text-muted: #5a6988;
+      --border-subtle: rgba(255,255,255,0.03);
+      --border-soft: rgba(255,255,255,0.07);
+      --border-glow: rgba(16,185,129,0.25);
+      --border-blue: rgba(59,130,246,0.25);
+      --success: #10b981;
+      --error: #ef4444;
+      --warning: #f59e0b;
+      --radius-sm: 10px;
+      --radius-md: 16px;
+      --radius-lg: 22px;
+      --radius-xl: 28px;
+      --shadow-elevated: 0 4px 24px rgba(0,0,0,0.3);
+    }
+
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: var(--bg);
+      min-height: 100vh;
+      color: var(--text);
+      padding-bottom: 90px;
+      position: relative;
+    }
+
+    #ambientCanvas {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(11,17,32,0.85);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border-bottom: 1px solid var(--border-subtle);
+      padding: 0 20px;
+    }
+    .topbar-inner {
+      max-width: 700px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      height: 58px;
+      gap: 14px;
+    }
+    .back-btn {
+      background: var(--elevated);
+      border: 1px solid var(--border-soft);
+      border-radius: 50%;
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      color: var(--text-secondary);
+      text-decoration: none;
+      transition: all 0.25s;
+      flex-shrink: 0;
+    }
+    .back-btn:hover { border-color: var(--border-glow); color: var(--primary); }
+    .back-btn svg { width: 17px; height: 17px; }
+    .topbar-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.3rem;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+    }
+
+    .main-layout {
+      max-width: 700px;
+      margin: 0 auto;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .info-strip {
+      background: var(--surface);
+      border: 1px solid var(--border-blue);
+      border-radius: var(--radius-lg);
+      padding: 14px 18px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      box-shadow: var(--shadow-elevated);
+    }
+    .info-strip-icon {
+      width: 38px;
+      height: 38px;
+      border-radius: 12px;
+      background: var(--blue-muted);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .info-strip-icon svg { width: 18px; height: 18px; color: var(--blue-glow); }
+    .info-strip-text { font-size: 0.8rem; color: var(--text-secondary); line-height: 1.5; }
+    .info-strip-text strong { color: var(--blue-glow); }
+
+    .step-card {
+      background: var(--surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-xl);
+      padding: 26px 24px;
+      box-shadow: var(--shadow-elevated);
+      position: relative;
+    }
+    .step-card-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 22px;
+    }
+    .step-badge {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      background: var(--primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 0.85rem;
+      color: #fff;
+      flex-shrink: 0;
+    }
+    .step-card-header h3 {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.15rem;
+      font-weight: 700;
+      letter-spacing: -0.3px;
+    }
+
+    .amount-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+    .amount-chip {
+      padding: 15px 10px;
+      background: var(--elevated);
+      border: 1.5px solid var(--border-soft);
+      border-radius: var(--radius-md);
+      color: var(--text);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+      text-align: center;
+    }
+    .amount-chip:hover { border-color: var(--border-glow); background: var(--primary-muted); }
+    .amount-chip.selected { border-color: var(--primary); background: var(--primary-muted); color: var(--primary-glow); box-shadow: 0 0 20px rgba(16,185,129,0.08); }
+    .amount-chip.custom-selected { border-color: var(--blue); background: var(--blue-muted); color: var(--blue-glow); }
+
+    .field-group { margin-bottom: 16px; }
+    .field-label {
+      display: block;
+      font-size: 0.7rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      margin-bottom: 8px;
+    }
+    .field-input {
+      width: 100%;
+      height: 50px;
+      background: var(--elevated);
+      border: 1.5px solid var(--border-soft);
+      border-radius: var(--radius-md);
+      padding: 0 16px;
+      font-family: inherit;
+      font-size: 0.9rem;
+      color: var(--text);
+      outline: none;
+      transition: all 0.3s;
+    }
+    .field-input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(16,185,129,0.05); background: #131d33; }
+    .field-input.error { border-color: var(--error); }
+    .field-input::placeholder { color: var(--text-muted); font-size: 0.82rem; }
+    .field-input:disabled { opacity: 0.5; cursor: not-allowed; }
+    .field-error { font-size: 0.7rem; color: var(--error); margin-top: 4px; display: none; font-weight: 500; }
+    .field-error.show { display: block; }
+
+    .amount-highlight {
+      background: var(--elevated);
+      border: 1px solid var(--border-glow);
+      border-radius: var(--radius-md);
+      padding: 16px 20px;
+      text-align: center;
+      margin-top: 4px;
+    }
+    .amount-highlight-label {
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: var(--text-muted);
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+    .amount-highlight-value {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.7rem;
+      font-weight: 700;
+      color: var(--primary-glow);
+    }
+
+    .bank-card {
+      background: linear-gradient(135deg, rgba(59,130,246,0.06), rgba(59,130,246,0.02));
+      border: 1px solid var(--border-blue);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      margin-bottom: 18px;
+    }
+    .bank-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 11px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+      font-size: 0.84rem;
+    }
+    .bank-row:last-child { border-bottom: none; }
+    .bank-row-label { color: var(--text-muted); font-size: 0.72rem; }
+    .bank-row-value { font-weight: 700; color: var(--text); }
+    .bank-row-value.acct-num {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.2rem;
+      letter-spacing: 1.5px;
+      color: var(--blue-glow);
+    }
+    .bank-copy-row { display: flex; gap: 8px; margin-top: 14px; }
+    .bank-copy-btn {
+      flex: 1;
+      padding: 10px 12px;
+      border-radius: 50px;
+      font-family: inherit;
+      font-size: 0.74rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+    }
+    .bank-copy-btn.primary-copy { background: rgba(59,130,246,0.15); color: var(--blue-glow); border: 1px solid rgba(59,130,246,0.25); }
+    .bank-copy-btn.primary-copy:hover { background: rgba(59,130,246,0.25); }
+    .bank-copy-btn.secondary-copy { background: rgba(16,185,129,0.1); color: var(--primary-glow); border: 1px solid rgba(16,185,129,0.2); }
+    .bank-copy-btn.secondary-copy:hover { background: rgba(16,185,129,0.18); }
+    .bank-copy-btn svg { width: 13px; height: 13px; }
+
+    .submit-btn {
+      width: 100%;
+      height: 54px;
+      background: linear-gradient(135deg, var(--primary) 0%, #059669 100%);
+      color: #fff;
+      font-family: inherit;
+      font-size: 0.95rem;
+      font-weight: 700;
+      border: none;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      transition: all 0.3s;
+      letter-spacing: 0.5px;
+      position: relative;
+      overflow: hidden;
+    }
+    .submit-btn::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
+      transform: translateX(-100%);
+      transition: transform 0.6s;
+    }
+    .submit-btn:hover:not(:disabled)::after { transform: translateX(100%); }
+    .submit-btn:hover:not(:disabled) { box-shadow: 0 8px 32px rgba(16,185,129,0.35); transform: translateY(-1px); }
+    .submit-btn:active { transform: scale(0.98); }
+    .submit-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+    .submit-spinner {
+      width: 20px;
+      height: 20px;
+      border: 2.5px solid rgba(255,255,255,0.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      display: none;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .history-link {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 14px;
+      color: var(--primary);
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 0.84rem;
+      border-radius: var(--radius-md);
+      transition: all 0.2s;
+    }
+    .history-link:hover { background: var(--primary-muted); }
+    .history-link svg { width: 16px; height: 16px; }
+
+    .bottom-nav {
+      position: fixed;
+      bottom: 12px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 100;
+      background: var(--surface);
+      border: 1px solid var(--border-soft);
+      border-radius: 50px;
+      display: flex;
+      align-items: center;
+      padding: 6px 8px;
+      gap: 2px;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+      backdrop-filter: blur(20px);
+    }
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 10px 16px;
+      border-radius: 50px;
+      text-decoration: none;
+      color: var(--text-muted);
+      font-size: 0.7rem;
+      font-weight: 600;
+      transition: all 0.3s;
+      white-space: nowrap;
+    }
+    .nav-item.active { background: var(--primary); color: #fff; box-shadow: 0 4px 16px rgba(16,185,129,0.3); }
+    .nav-item:hover:not(.active) { color: var(--text); background: var(--elevated); }
+    .nav-item svg { width: 18px; height: 18px; }
+
+    .toast-overlay {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      z-index: 300;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      pointer-events: none;
+    }
+    .toast-item {
+      background: var(--surface);
+      border: 1px solid var(--border-soft);
+      border-radius: var(--radius-md);
+      padding: 14px 18px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      box-shadow: 0 16px 40px rgba(0,0,0,0.5);
+      transform: translateX(-120%);
+      transition: transform 0.5s cubic-bezier(0.22,0.61,0.36,1);
+      pointer-events: auto;
+      max-width: 380px;
+    }
+    .toast-item.show { transform: translateX(0); }
+    .toast-item.success { border-left: 3px solid var(--success); }
+    .toast-item.error { border-left: 3px solid var(--error); }
+    .toast-icon-wrap {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .toast-item.success .toast-icon-wrap { background: rgba(16,185,129,0.12); }
+    .toast-item.error .toast-icon-wrap { background: rgba(239,68,68,0.12); }
+    .toast-icon-wrap svg { width: 17px; height: 17px; }
+    .toast-item.success .toast-icon-wrap svg { color: var(--success); }
+    .toast-item.error .toast-icon-wrap svg { color: var(--error); }
+    .toast-text h4 { font-size: 0.85rem; font-weight: 700; }
+    .toast-text p { font-size: 0.73rem; color: var(--text-secondary); }
+
+    @media (max-width: 500px) {
+      .amount-grid { grid-template-columns: repeat(2, 1fr); }
+      .amount-highlight-value { font-size: 1.3rem; }
+      .bank-row-value.acct-num { font-size: 1rem; }
+      .bottom-nav { bottom: 6px; padding: 4px 6px; }
+      .nav-item { padding: 8px 10px; font-size: 0.6rem; gap: 3px; }
+      .nav-item svg { width: 15px; height: 15px; }
+    }
+  </style>
+</head>
+<body>
+
+<canvas id="ambientCanvas"></canvas>
+
+<div class="toast-overlay" id="toastContainer"></div>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <a href="dashboard.html" class="back-btn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+    </a>
+    <span class="topbar-title">Deposit Funds</span>
+  </div>
+</header>
+
+<main class="main-layout">
+
+  <div class="info-strip">
+    <div class="info-strip-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+    </div>
+    <div class="info-strip-text">Minimum deposit is <strong>₦7,000</strong>. Transfer to the account below and fill in your details. Admin will verify and credit your wallet.</div>
+  </div>
+
+  <div class="step-card" id="step1Card">
+    <div class="step-card-header">
+      <div class="step-badge">1</div>
+      <h3>Select Deposit Amount</h3>
+    </div>
+
+    <div class="amount-grid">
+      <button class="amount-chip" onclick="selectAmount(7000)">₦7,000</button>
+      <button class="amount-chip" onclick="selectAmount(15000)">₦15,000</button>
+      <button class="amount-chip" onclick="selectAmount(25000)">₦25,000</button>
+      <button class="amount-chip" onclick="selectAmount(45000)">₦45,000</button>
+      <button class="amount-chip" onclick="selectAmount(70000)">₦70,000</button>
+      <button class="amount-chip" onclick="selectAmount(100000)">₦100,000</button>
+    </div>
+
+    <div class="field-group">
+      <label class="field-label">Or Enter Custom Amount</label>
+      <input type="number" class="field-input" id="customAmount" placeholder="Minimum ₦7,000" oninput="onCustomAmount()" />
+      <div class="field-error" id="amountError"></div>
+    </div>
+
+    <div class="amount-highlight">
+      <div class="amount-highlight-label">You are depositing</div>
+      <div class="amount-highlight-value" id="selectedDisplay">₦0.00</div>
+    </div>
+
+    <button class="submit-btn" id="proceedBtn" onclick="proceedToPayment()" style="margin-top:18px;">
+      Proceed to Payment →
+    </button>
+  </div>
+
+  <div class="step-card" id="step2Card" style="display:none;">
+    <div class="step-card-header">
+      <div class="step-badge">2</div>
+      <h3>Transfer & Submit Details</h3>
+    </div>
+
+    <div class="bank-card">
+      <div class="bank-row">
+        <span class="bank-row-label">Bank</span>
+        <span class="bank-row-value">Kuda Microfinance Bank</span>
+      </div>
+      <div class="bank-row">
+        <span class="bank-row-label">Account Number</span>
+        <span class="bank-row-value acct-num" id="displayAcctNum">2057867586</span>
+      </div>
+      <div class="bank-row">
+        <span class="bank-row-label">Account Name</span>
+        <span class="bank-row-value">Leghor Oyibo</span>
+      </div>
+      <div class="bank-copy-row">
+        <button class="bank-copy-btn primary-copy" onclick="copyAccountNumber()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+          Copy Account Number
+        </button>
+        <button class="bank-copy-btn secondary-copy" onclick="copyAllDetails()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+          Copy All
+        </button>
+      </div>
+    </div>
+
+    <div class="field-group">
+      <label class="field-label">Your Full Name (Sender)</label>
+      <input type="text" class="field-input" id="fullName" placeholder="Enter the name used to make the transfer" />
+      <div class="field-error" id="nameError"></div>
+    </div>
+
+    <div class="field-group">
+      <label class="field-label">Amount You Sent</label>
+      <input type="text" class="field-input" id="amountSent" readonly />
+    </div>
+
+    <button class="submit-btn" id="submitDepositBtn" onclick="submitDeposit()">
+      <div class="submit-spinner" id="spinner"></div>
+      <span id="btnText">Submit Deposit Request</span>
+    </button>
+  </div>
+
+  <a href="transactions.html" class="history-link">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+    View Deposit History
+  </a>
+
+</main>
+
+<nav class="bottom-nav">
+  <a href="dashboard.html" class="nav-item">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
+    Home
+  </a>
+  <a href="deposit.html" class="nav-item active">
+    <svg viewBox="0 0 24 24" fill="currentColor"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+    Deposit
+  </a>
+  <a href="withdraw.html" class="nav-item">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="12" y1="10" x2="12" y2="18"/><polyline points="9 15 12 18 15 15"/></svg>
+    Withdraw
+  </a>
+  <a href="investments.html" class="nav-item">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+    Invest
+  </a>
+  <a href="profile.html" class="nav-item">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+    Profile
+  </a>
+</nav>
+
+<script>
+  (function(){
+    const c=document.getElementById('ambientCanvas'),ctx=c.getContext('2d');
+    let w,h,pts=[];
+    function resize(){w=c.width=window.innerWidth;h=c.height=window.innerHeight;}
+    resize();window.addEventListener('resize',resize);
+    class Pt{
+      constructor(){this.reset();}
+      reset(){this.x=Math.random()*w;this.y=Math.random()*h;this.s=Math.random()*1.2+0.4;this.sx=(Math.random()-0.5)*0.2;this.sy=(Math.random()-0.5)*0.2;this.o=Math.random()*0.3+0.06;this.ps=Math.random()*0.015+0.004;this.po=Math.random()*Math.PI*2;this.h=Math.random()<0.5?200:(Math.random()<0.5?160:220);}
+      update(){this.x+=this.sx;this.y+=this.sy;if(this.x<-10)this.x=w+10;if(this.x>w+10)this.x=-10;if(this.y<-10)this.y=h+10;if(this.y>h+10)this.y=-10;}
+      draw(){const p=Math.sin(Date.now()*this.ps+this.po)*0.3+0.7,a=this.o*p;ctx.beginPath();ctx.arc(this.x,this.y,this.s,0,Math.PI*2);ctx.fillStyle=`hsla(${this.h},60%,50%,${a})`;ctx.fill();}
+    }
+    for(let i=0;i<60;i++)pts.push(new Pt());
+    function anim(){ctx.clearRect(0,0,w,h);pts.forEach(p=>{p.update();p.draw();});
+      for(let i=0;i<pts.length;i++){for(let j=i+1;j<pts.length;j++){const dx=pts[i].x-pts[j].x,dy=pts[i].y-pts[j].y,d=Math.sqrt(dx*dx+dy*dy);if(d<100){ctx.beginPath();ctx.moveTo(pts[i].x,pts[i].y);ctx.lineTo(pts[j].x,pts[j].y);ctx.strokeStyle=`rgba(59,130,246,${0.02*(1-d/100)})`;ctx.lineWidth=0.35;ctx.stroke();}}}
+      requestAnimationFrame(anim);}
+    anim();
+  })();
+</script>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+  import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyDT0ACobk5YMFgrqxb-VOnfELXTyssrOtA",
+    authDomain: "newpro-d830e.firebaseapp.com",
+    projectId: "newpro-d830e",
+    storageBucket: "newpro-d830e.firebasestorage.app",
+    messagingSenderId: "642315724384",
+    appId: "1:642315724384:web:19def936898718e9300505"
+  };
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+
+  const BANK_DETAILS = {
+    bankName: "Kuda Microfinance Bank",
+    accountNumber: "2057867586",
+    accountName: "Leghor Oyibo"
+  };
+
+  let currentUser = null, selectedAmount = 0;
+
+  function showToast(type, title, msg, d = 4000) {
+    const container = document.getElementById('toastContainer');
+    const toast = document.createElement('div');
+    toast.className = `toast-item ${type}`;
+    toast.innerHTML = `<div class="toast-icon-wrap">
+      ${type==='success'?'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>':
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>'}
+    </div><div class="toast-text"><h4>${title}</h4><p>${msg}</p></div>`;
+    container.appendChild(toast);
+    requestAnimationFrame(() => toast.classList.add('show'));
+    setTimeout(() => { toast.classList.remove('show'); setTimeout(() => toast.remove(), 500); }, d);
+  }
+
+  function formatNaira(a) { return '₦' + Number(a).toLocaleString('en-NG', { minimumFractionDigits: 2 }); }
+
+  function updateDisplay() {
+    document.getElementById('selectedDisplay').textContent = selectedAmount > 0 ? formatNaira(selectedAmount) : '₦0.00';
+  }
+
+  function clearChipSelection() {
+    document.querySelectorAll('.amount-chip').forEach(b => b.classList.remove('selected', 'custom-selected'));
+  }
+
+  window.selectAmount = function(a) {
+    selectedAmount = a;
+    document.getElementById('customAmount').value = a;
+    document.getElementById('amountError').classList.remove('show');
+    clearChipSelection();
+    event.target.classList.add('selected');
+    updateDisplay();
+  };
+
+  window.onCustomAmount = function() {
+    const v = parseFloat(document.getElementById('customAmount').value);
+    if (v >= 7000) {
+      selectedAmount = v;
+      clearChipSelection();
+      document.getElementById('customAmount').classList.add('custom-selected');
+    } else {
+      selectedAmount = 0;
+      clearChipSelection();
+    }
+    updateDisplay();
+  };
+
+  window.proceedToPayment = function() {
+    if (selectedAmount < 7000) {
+      document.getElementById('amountError').textContent = 'Minimum deposit is ₦7,000.';
+      document.getElementById('amountError').classList.add('show');
+      return;
+    }
+    document.getElementById('step1Card').style.display = 'none';
+    document.getElementById('step2Card').style.display = 'block';
+    document.getElementById('amountSent').value = formatNaira(selectedAmount);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  window.copyAccountNumber = function() {
+    navigator.clipboard.writeText(BANK_DETAILS.accountNumber).then(() => showToast('success', 'Copied!', 'Account number: ' + BANK_DETAILS.accountNumber));
+  };
+
+  window.copyAllDetails = function() {
+    const details = `Bank: ${BANK_DETAILS.bankName}\nAccount: ${BANK_DETAILS.accountNumber}\nName: ${BANK_DETAILS.accountName}`;
+    navigator.clipboard.writeText(details).then(() => showToast('success', 'Copied!', 'All bank details copied.'));
+  };
+
+  window.submitDeposit = async function() {
+    if (!currentUser) return;
+
+    const fullName = document.getElementById('fullName').value.trim();
+    let hasError = false;
+
+    if (!fullName) {
+      document.getElementById('nameError').textContent = 'Please enter your full name (sender name).';
+      document.getElementById('nameError').classList.add('show');
+      hasError = true;
+    } else {
+      document.getElementById('nameError').classList.remove('show');
+    }
+
+    if (hasError) return;
+
+    const btn = document.getElementById('submitDepositBtn');
+    const sp = document.getElementById('spinner');
+    const tx = document.getElementById('btnText');
+    btn.disabled = true;
+    sp.style.display = 'block';
+    tx.textContent = 'Submitting...';
+
+    try {
+      await addDoc(collection(db, 'deposits'), {
+        uid: currentUser.uid,
+        email: currentUser.email || '',
+        fullName: fullName,
+        amount: selectedAmount,
+        bankName: BANK_DETAILS.bankName,
+        bankAccount: BANK_DETAILS.accountNumber,
+        bankAccountName: BANK_DETAILS.accountName,
+        method: 'manual',
+        status: 'pending',
+        createdAt: serverTimestamp(),
+        confirmedAt: null
+      });
+
+      await addDoc(collection(db, 'transactions'), {
+        uid: currentUser.uid,
+        type: 'deposit',
+        amount: selectedAmount,
+        status: 'pending',
+        createdAt: serverTimestamp(),
+        description: `Manual deposit via ${BANK_DETAILS.bankName}`
+      });
+
+      document.getElementById('fullName').value = '';
+      document.getElementById('customAmount').value = '';
+      selectedAmount = 0;
+      clearChipSelection();
+      updateDisplay();
+
+      btn.disabled = false;
+      sp.style.display = 'none';
+      tx.textContent = 'Submit Deposit Request';
+      showToast('success', 'Deposit Submitted! 🎉', 'Your deposit request has been sent to admin for review. Redirecting...');
+      setTimeout(() => window.location.href = 'transactions.html', 2500);
+    } catch (e) {
+      console.error('Deposit error:', e);
+      showToast('error', 'Submission Failed', 'Please try again.');
+      btn.disabled = false;
+      sp.style.display = 'none';
+      tx.textContent = 'Submit Deposit Request';
+    }
+  };
+
+  onAuthStateChanged(auth, (u) => {
+    if (u) currentUser = u;
+    else window.location.href = 'login.html';
+  });
+</script>
+</body>
+</html>
