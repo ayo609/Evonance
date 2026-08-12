@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
+  <title>Evonance – Admin Investments</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Playfair+Display:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #060b14; --surface: #0b1120; --elevated: #111b2e; --elevated-hover: #162032;
+      --primary: #f59e0b; --primary-dark: #d97706; --primary-soft: rgba(245,158,11,0.1);
+      --accent: #fbbf24; --text: #e8edf5; --text-secondary: #8896b4; --text-muted: #5a6988;
+      --border-subtle: rgba(255,255,255,0.03); --border-soft: rgba(255,255,255,0.07);
+      --success: #10b981; --error: #ef4444; --warning: #f59e0b; --info: #3b82f6; --purple: #8b5cf6;
+      --radius-sm: 10px; --radius-md: 16px; --radius-lg: 22px; --radius-xl: 28px;
+      --shadow-elevated: 0 4px 24px rgba(0,0,0,0.3);
+    }
+    body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); min-height: 100vh; color: var(--text); display: flex; }
+    
+    .sidebar { width: 260px; min-height: 100vh; background: var(--surface); border-right: 1px solid var(--border-subtle); padding: 20px 0; position: fixed; top: 0; left: 0; bottom: 0; z-index: 100; display: flex; flex-direction: column; overflow-y: auto; }
+    .sidebar-logo { display: flex; align-items: center; gap: 10px; padding: 0 20px 20px; border-bottom: 1px solid var(--border-soft); margin-bottom: 16px; }
+    .sidebar-logo-icon { width: 38px; height: 38px; background: linear-gradient(135deg, var(--primary), #fbbf24); border-radius: 10px; display: flex; align-items: center; justify-content: center; }
+    .sidebar-logo-icon svg { width: 20px; height: 20px; color: #1a1a1a; }
+    .sidebar-brand { font-family: 'Playfair Display', serif; font-size: 1.1rem; font-weight: 800; color: var(--text); }
+    .sidebar-brand span { color: var(--primary); }
+    .sidebar-nav { flex: 1; padding: 0 12px; }
+    .sidebar-link { display: flex; align-items: center; gap: 10px; padding: 12px 16px; border-radius: 12px; color: var(--text-muted); text-decoration: none; font-size: 0.82rem; font-weight: 500; transition: all 0.2s; margin-bottom: 2px; }
+    .sidebar-link:hover { background: var(--elevated-hover); color: var(--text); }
+    .sidebar-link.active { background: var(--primary-soft); color: var(--primary); font-weight: 600; }
+    .sidebar-link svg { width: 18px; height: 18px; flex-shrink: 0; }
+    .sidebar-footer { padding: 16px 20px 0; border-top: 1px solid var(--border-soft); margin-top: auto; }
+    .sidebar-user { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+    .sidebar-avatar { width: 34px; height: 34px; background: var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.8rem; color: #1a1a1a; }
+    .sidebar-user-name { font-size: 0.78rem; font-weight: 600; }
+    .sidebar-user-role { font-size: 0.65rem; color: var(--primary); }
+    .sidebar-logout { display: flex; align-items: center; gap: 8px; padding: 10px 14px; border-radius: 10px; color: #fca5a5; cursor: pointer; font-size: 0.8rem; font-weight: 500; transition: all 0.2s; background: none; border: none; width: 100%; font-family: inherit; }
+    .sidebar-logout:hover { background: rgba(239,68,68,0.1); }
+    .sidebar-logout svg { width: 16px; height: 16px; }
+    
+    .main-content { flex: 1; margin-left: 260px; padding: 24px; }
+    .page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
+    .page-title { font-family: 'Playfair Display', serif; font-size: 1.5rem; font-weight: 700; letter-spacing: -0.5px; }
+    
+    .tab-row { display: flex; gap: 4px; background: var(--surface); border: 1px solid var(--border-subtle); border-radius: 50px; padding: 4px; margin-bottom: 20px; box-shadow: var(--shadow-elevated); }
+    .tab-pill { flex: 1; padding: 10px 14px; border: none; background: transparent; color: var(--text-muted); font-family: inherit; font-size: 0.78rem; font-weight: 600; cursor: pointer; border-radius: 50px; transition: all 0.3s; text-align: center; }
+    .tab-pill.active { background: var(--primary); color: #1a1a1a; box-shadow: 0 4px 16px rgba(245,158,11,0.3); }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    
+    .add-btn { padding: 10px 18px; background: var(--primary); color: #1a1a1a; border: none; border-radius: 50px; font-family: inherit; font-size: 0.8rem; font-weight: 700; cursor: pointer; transition: all 0.2s; }
+    .add-btn:hover { background: var(--primary-dark); }
+    
+    .plans-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 14px; }
+    .plan-card { background: var(--surface); border: 1px solid var(--border-subtle); border-radius: var(--radius-xl); padding: 22px 20px; box-shadow: var(--shadow-elevated); }
+    .plan-card h4 { font-size: 0.95rem; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .plan-card h4 span.emoji { font-size: 1.3rem; }
+    .plan-detail { display: flex; justify-content: space-between; padding: 6px 0; font-size: 0.76rem; border-bottom: 1px solid var(--border-subtle); }
+    .plan-detail:last-child { border-bottom: none; }
+    .plan-detail span:first-child { color: var(--text-muted); }
+    .plan-detail span:last-child { font-weight: 600; }
+    .plan-actions { display: flex; gap: 6px; margin-top: 12px; flex-wrap: wrap; }
+    .action-btn { flex: 1; padding: 7px; border-radius: 7px; font-family: inherit; font-size: 0.68rem; font-weight: 600; cursor: pointer; border: none; transition: all 0.2s; min-width: 50px; }
+    .action-btn.edit { background: var(--info); color: #fff; }
+    .action-btn.toggle { background: var(--warning); color: #1a1a1a; }
+    .action-btn.toggle.off { background: var(--error); color: #fff; }
+    .action-btn.delete { background: var(--error); color: #fff; }
+    .action-btn:hover { opacity: 0.8; }
+    .qty-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+    .qty-field label { font-size: 0.66rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px; }
+    .qty-field input { width: 100%; height: 36px; background: var(--elevated); border: 1.5px solid var(--border-soft); border-radius: 8px; padding: 0 10px; font-family: inherit; font-size: 0.76rem; color: var(--text); outline: none; }
+    .qty-field input:focus { border-color: var(--primary); }
+    .slot-info { font-size: 0.62rem; margin-top: 2px; }
+    .slot-info.global { color: var(--warning); }
+    .slot-info.peruser { color: var(--info); }
+    
+    .investments-table { width: 100%; background: var(--surface); border: 1px solid var(--border-subtle); border-radius: var(--radius-xl); overflow: hidden; box-shadow: var(--shadow-elevated); }
+    .table-header { display: grid; grid-template-columns: 1.5fr 1.5fr 1fr 1fr 1fr 1fr 1.2fr; padding: 14px 16px; background: var(--elevated); font-size: 0.65rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+    .table-row { display: grid; grid-template-columns: 1.5fr 1.5fr 1fr 1fr 1fr 1fr 1.2fr; padding: 14px 16px; border-bottom: 1px solid var(--border-subtle); font-size: 0.76rem; align-items: center; }
+    .table-row:last-child { border-bottom: none; }
+    .table-row:hover { background: var(--elevated); }
+    .status-badge { display: inline-block; padding: 4px 10px; border-radius: 50px; font-size: 0.6rem; font-weight: 700; }
+    .status-badge.active { background: rgba(16,185,129,0.12); color: var(--success); }
+    .status-badge.completed { background: rgba(59,130,246,0.12); color: var(--info); }
+    
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.75); backdrop-filter: blur(4px); z-index: 300; align-items: center; justify-content: center; padding: 20px; }
+    .modal-overlay.show { display: flex; }
+    .modal-dialog { background: var(--surface); border: 1px solid var(--border-soft); border-radius: var(--radius-xl); padding: 26px; max-width: 520px; width: 100%; max-height: 90vh; overflow-y: auto; animation: modalPop 0.3s ease; }
+    @keyframes modalPop { from { opacity: 0; transform: scale(0.9) translateY(20px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+    .modal-dialog h3 { font-family: 'Playfair Display', serif; font-size: 1.1rem; font-weight: 700; margin-bottom: 16px; text-align: center; }
+    .form-group { margin-bottom: 14px; }
+    .form-label { display: block; font-size: 0.7rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+    .form-input { width: 100%; height: 46px; background: var(--elevated); border: 1.5px solid var(--border-soft); border-radius: var(--radius-md); padding: 0 14px; font-family: inherit; font-size: 0.88rem; color: var(--text); outline: none; }
+    .form-input:focus { border-color: var(--primary); }
+    select.form-input { cursor: pointer; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .modal-btns { display: flex; gap: 8px; margin-top: 18px; }
+    .modal-btn { flex: 1; padding: 11px; border-radius: 50px; font-family: inherit; font-size: 0.84rem; font-weight: 700; cursor: pointer; border: none; transition: all 0.2s; }
+    .modal-btn.cancel { background: var(--elevated); color: var(--text); border: 1px solid var(--border-soft); }
+    .modal-btn.confirm { background: var(--primary); color: #1a1a1a; }
+    .modal-btn.danger { background: var(--error); color: #fff; }
+    .modal-btn.warning { background: var(--warning); color: #1a1a1a; }
+    
+    .toast-overlay { position: fixed; top: 20px; right: 20px; z-index: 400; display: flex; flex-direction: column; gap: 8px; pointer-events: none; }
+    .toast-item { background: var(--surface); border: 1px solid var(--border-soft); border-radius: var(--radius-md); padding: 14px 18px; display: flex; align-items: center; gap: 10px; box-shadow: 0 16px 40px rgba(0,0,0,0.5); transform: translateX(120%); transition: transform 0.5s cubic-bezier(0.22,0.61,0.36,1); pointer-events: auto; max-width: 380px; }
+    .toast-item.show { transform: translateX(0); }
+    .toast-item.success { border-left: 3px solid var(--success); }
+    .toast-item.error { border-left: 3px solid var(--error); }
+    .toast-icon-wrap { width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .toast-item.success .toast-icon-wrap { background: rgba(16,185,129,0.12); }
+    .toast-item.error .toast-icon-wrap { background: rgba(239,68,68,0.12); }
+    .toast-icon-wrap svg { width: 17px; height: 17px; }
+    .toast-item.success .toast-icon-wrap svg { color: var(--success); }
+    .toast-item.error .toast-icon-wrap svg { color: var(--error); }
+    .toast-text h4 { font-size: 0.85rem; font-weight: 700; }
+    .toast-text p { font-size: 0.72rem; color: var(--text-secondary); }
+    .no-data { text-align: center; padding: 40px; color: var(--text-muted); font-size: 0.82rem; }
+    .search-bar { display: flex; gap: 10px; margin-bottom: 16px; }
+    .search-input { flex: 1; height: 42px; background: var(--surface); border: 1px solid var(--border-soft); border-radius: 50px; padding: 0 16px; font-family: inherit; font-size: 0.82rem; color: var(--text); outline: none; }
+    .search-input:focus { border-color: var(--primary); }
+    
+    @media (max-width: 768px) { .sidebar { display: none; } .main-content { margin-left: 0; } .plans-grid { grid-template-columns: 1fr; } .table-header, .table-row { grid-template-columns: 1fr 0.8fr 0.8fr 1fr; } }
+  </style>
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="sidebar-logo"><div class="sidebar-logo-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg></div><span class="sidebar-brand">Ev<span>onance</span></span></div>
+  <nav class="sidebar-nav">
+    <a href="admin-dashboard.html" class="sidebar-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Dashboard</a>
+    <a href="admin-users.html" class="sidebar-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>Users</a>
+    <a href="admin-deposits.html" class="sidebar-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>Deposits</a>
+    <a href="admin-withdrawals.html" class="sidebar-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="12" y1="10" x2="12" y2="18"/><polyline points="9 15 12 18 15 15"/></svg>Withdrawals</a>
+    <a href="admin-investments.html" class="sidebar-link active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Investments</a>
+    <a href="admin-notifications.html" class="sidebar-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>Notifications</a>
+    <a href="admin-settings.html" class="sidebar-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>Settings</a>
+  </nav>
+  <div class="sidebar-footer"><div class="sidebar-user"><div class="sidebar-avatar">A</div><div class="sidebar-user-info"><div class="sidebar-user-name">Admin</div><div class="sidebar-user-role">Administrator</div></div></div><button class="sidebar-logout" onclick="handleLogout()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>Logout</button></div>
+</aside>
+
+<main class="main-content">
+  <div class="page-header">
+    <div><h1 class="page-title">Investment Management</h1><p style="color:var(--text-muted);font-size:0.8rem;">Manage standard plans, limited offers & VIP packages</p></div>
+  </div>
+
+  <div class="tab-row">
+    <button class="tab-pill active" onclick="switchTab('standard')">📊 Standard</button>
+    <button class="tab-pill" onclick="switchTab('limited')">⚡ Limited</button>
+    <button class="tab-pill" onclick="switchTab('vip')">👑 VIP</button>
+    <button class="tab-pill" onclick="switchTab('all')">📋 All Investments</button>
+  </div>
+
+  <div class="tab-content active" id="tab-standard">
+    <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;">
+      <button class="add-btn" onclick="saveStandardQuantities()">💾 Save Limits & Quantities</button>
+    </div>
+    <div class="plans-grid" id="standardPlansGrid"></div>
+  </div>
+  <div class="tab-content" id="tab-limited">
+    <button class="add-btn" style="margin-bottom:14px;" onclick="openAddModal('limited')">+ Add Limited Plan</button>
+    <div class="plans-grid" id="limitedPlansGrid"><div class="no-data">Loading...</div></div>
+  </div>
+  <div class="tab-content" id="tab-vip">
+    <button class="add-btn" style="margin-bottom:14px;" onclick="openAddModal('vip')">+ Add VIP Package</button>
+    <div class="plans-grid" id="vipPlansGrid"><div class="no-data">Loading...</div></div>
+  </div>
+  <div class="tab-content" id="tab-all">
+    <div class="search-bar"><input type="text" class="search-input" id="investmentSearch" placeholder="Search by email or plan..." oninput="loadAllInvestments()" /></div>
+    <div class="investments-table"><div class="table-header"><span>User</span><span>Plan</span><span>Amount</span><span>Profit</span><span>Days</span><span>Status</span><span>Started</span></div><div id="allInvestmentsList"><div class="no-data">Loading...</div></div></div>
+  </div>
+</main>
+
+<!-- Add/Edit Plan Modal -->
+<div class="modal-overlay" id="planModal">
+  <div class="modal-dialog">
+    <h3 id="modalTitle">Add Plan</h3>
+    <div class="form-group"><label class="form-label">Plan Name</label><input type="text" class="form-input" id="planName" /></div>
+    <div class="form-group"><label class="form-label">Emoji</label><input type="text" class="form-input" id="planEmoji" value="🔥" /></div>
+    <div class="form-row"><div class="form-group"><label class="form-label">Investment (₦)</label><input type="number" class="form-input" id="planInvest" /></div><div class="form-group"><label class="form-label">Profit (₦)</label><input type="number" class="form-input" id="planProfit" /></div></div>
+    <div class="form-row"><div class="form-group"><label class="form-label">Duration (Days)</label><input type="number" class="form-input" id="planDays" /></div><div class="form-group"><label class="form-label">Per-User Limit</label><input type="number" class="form-input" id="planPerUserLimit" placeholder="Empty = unlimited" /></div></div>
+    <div class="form-group"><label class="form-label">Global Max Quantity (Total slots)</label><input type="number" class="form-input" id="planQty" placeholder="Leave empty for unlimited" /></div>
+    <div class="form-row" id="dateRow" style="display:none;">
+      <div class="form-group"><label class="form-label">Start Date/Time</label><input type="datetime-local" class="form-input" id="planStart" /></div>
+      <div class="form-group"><label class="form-label">End Date/Time</label><input type="datetime-local" class="form-input" id="planEnd" /></div>
+    </div>
+    <div class="modal-btns"><button class="modal-btn cancel" onclick="closePlanModal()">Cancel</button><button class="modal-btn confirm" onclick="savePlan()">Save Plan</button></div>
+  </div>
+</div>
+
+<!-- Edit Standard Plan Modal -->
+<div class="modal-overlay" id="standardEditModal">
+  <div class="modal-dialog" style="max-width:420px;">
+    <h3>✏️ Edit Standard Plan</h3>
+    <div class="form-group"><label class="form-label">Name</label><input type="text" class="form-input" id="stdEditName" /></div>
+    <div class="form-group"><label class="form-label">Emoji</label><input type="text" class="form-input" id="stdEditEmoji" /></div>
+    <div class="form-row"><div class="form-group"><label class="form-label">Investment (₦)</label><input type="number" class="form-input" id="stdEditInvest" /></div><div class="form-group"><label class="form-label">Profit (₦)</label><input type="number" class="form-input" id="stdEditProfit" /></div></div>
+    <div class="form-row"><div class="form-group"><label class="form-label">Duration (Days)</label><input type="number" class="form-input" id="stdEditDays" /></div></div>
+    <input type="hidden" id="stdEditId" />
+    <div class="modal-btns"><button class="modal-btn cancel" onclick="closeStandardEditModal()">Cancel</button><button class="modal-btn confirm" onclick="saveStandardEdit()">Save Changes</button></div>
+  </div>
+</div>
+
+<!-- Confirm Save Modal -->
+<div class="modal-overlay" id="confirmSaveModal">
+  <div class="modal-dialog" style="max-width:380px;">
+    <h3>💾 Confirm Save</h3>
+    <p style="text-align:center;color:var(--text-secondary);margin-bottom:12px;">Are you sure you want to save these changes? User side will reflect immediately.</p>
+    <div class="modal-btns"><button class="modal-btn cancel" onclick="closeConfirmSaveModal()">Cancel</button><button class="modal-btn confirm" id="confirmSaveBtn">✅ Yes, Save</button></div>
+  </div>
+</div>
+
+<!-- Confirm Delete Modal -->
+<div class="modal-overlay" id="confirmDeleteModal">
+  <div class="modal-dialog" style="max-width:380px;">
+    <h3>🗑️ Delete Plan?</h3>
+    <p style="text-align:center;color:var(--text-secondary);margin-bottom:12px;">This action cannot be undone. This plan will be permanently removed.</p>
+    <div class="modal-btns"><button class="modal-btn cancel" onclick="closeConfirmDeleteModal()">Cancel</button><button class="modal-btn danger" id="confirmDeleteBtn">🗑️ Delete</button></div>
+  </div>
+</div>
+
+<div class="toast-overlay" id="toastContainer"></div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+  import { getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc, collection, query, orderBy, getDocs, serverTimestamp, addDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+  const firebaseConfig = { apiKey: "AIzaSyDT0ACobk5YMFgrqxb-VOnfELXTyssrOtA", authDomain: "newpro-d830e.firebaseapp.com", projectId: "newpro-d830e", storageBucket: "newpro-d830e.firebasestorage.app", messagingSenderId: "642315724384", appId: "1:642315724384:web:19def936898718e9300505" };
+  const app = initializeApp(firebaseConfig); const auth = getAuth(app); const db = getFirestore(app);
+
+  const DEFAULT_STANDARD_PLANS = [
+    { id: 1, name: 'Starter Plan', emoji: '🥉', invest: 7000, profit: 2800, days: 2, total: 9800, icon: 'bronze' },
+    { id: 2, name: 'Basic Plan', emoji: '🥈', invest: 15000, profit: 7000, days: 6, total: 22000, icon: 'silver' },
+    { id: 3, name: 'Standard Plan', emoji: '🥇', invest: 25000, profit: 11000, days: 10, total: 36000, icon: 'gold' },
+    { id: 4, name: 'Premium Plan', emoji: '💎', invest: 45000, profit: 25000, days: 20, total: 70000, icon: 'platinum' },
+    { id: 5, name: 'Business Plan', emoji: '💼', invest: 70000, profit: 70000, days: 30, total: 140000, icon: 'diamond' },
+    { id: 6, name: 'Executive Plan', emoji: '👑', invest: 100000, profit: 120000, days: 40, total: 220000, icon: 'vip' },
+    { id: 7, name: 'Elite Plan', emoji: '🚀', invest: 150000, profit: 300000, days: 50, total: 450000, icon: 'elite' },
+    { id: 8, name: 'Legend Plan', emoji: '🏆', invest: 200000, profit: 500000, days: 60, total: 700000, icon: 'legend' },
+    { id: 9, name: 'Ultimate Plan', emoji: '🌟', invest: 300000, profit: 1200000, days: 90, total: 1500000, icon: 'ultimate' }
+  ];
+
+  let currentEditId = null, currentPlanType = 'limited', currentTab = 'standard';
+  let currentStandardPlans = [...DEFAULT_STANDARD_PLANS];
+  let pendingSaveCallback = null, pendingDeleteId = null, pendingDeleteColl = null;
+
+  function showToast(type, title, msg, d = 4000) {
+    const container = document.getElementById('toastContainer');
+    const toast = document.createElement('div');
+    toast.className = `toast-item ${type}`;
+    toast.innerHTML = `<div class="toast-icon-wrap">
+      ${type==='success'?'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>':'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>'}
+    </div><div class="toast-text"><h4>${title}</h4><p>${msg}</p></div>`;
+    container.appendChild(toast);
+    requestAnimationFrame(() => toast.classList.add('show'));
+    setTimeout(() => { toast.classList.remove('show'); setTimeout(() => toast.remove(), 500); }, d);
+  }
+
+  function formatNaira(a) { return '₦' + Number(a).toLocaleString('en-NG', { minimumFractionDigits: 2 }); }
+  function formatDate(ts) { if(!ts) return ''; const d = ts.toDate?ts.toDate():new Date(ts); return d.toLocaleDateString('en-NG',{month:'short',day:'numeric',year:'numeric'}); }
+  function maskEmail(e) { if(!e) return ''; const p = e.split('@'); return p[0].substring(0,4)+'***@'+p[1]; }
+
+  window.handleLogout = async () => { await signOut(auth); window.location.href = 'admin-login.html'; };
+
+  // ===== CONFIRM SAVE MODAL =====
+  function openConfirmSaveModal(callback) {
+    pendingSaveCallback = callback;
+    document.getElementById('confirmSaveModal').classList.add('show');
+    document.getElementById('confirmSaveBtn').onclick = () => {
+      closeConfirmSaveModal();
+      if (pendingSaveCallback) pendingSaveCallback();
+    };
+  }
+  window.closeConfirmSaveModal = () => { document.getElementById('confirmSaveModal').classList.remove('show'); pendingSaveCallback = null; };
+
+  // ===== CONFIRM DELETE MODAL =====
+  function openConfirmDeleteModal(id, coll) {
+    pendingDeleteId = id;
+    pendingDeleteColl = coll;
+    document.getElementById('confirmDeleteModal').classList.add('show');
+    document.getElementById('confirmDeleteBtn').onclick = () => {
+      closeConfirmDeleteModal();
+      executeDelete();
+    };
+  }
+  window.closeConfirmDeleteModal = () => { document.getElementById('confirmDeleteModal').classList.remove('show'); pendingDeleteId = null; pendingDeleteColl = null; };
+
+  async function executeDelete() {
+    if (!pendingDeleteId || !pendingDeleteColl) return;
+    await deleteDoc(doc(db, pendingDeleteColl, pendingDeleteId));
+    showToast('success', 'Deleted!', 'Plan has been permanently removed.');
+    loadPlans(pendingDeleteColl, pendingDeleteColl === 'limitedPlans' ? 'limitedPlansGrid' : 'vipPlansGrid');
+    pendingDeleteId = null; pendingDeleteColl = null;
+  }
+
+  async function loadStandardPlanOverrides() {
+    try {
+      const snap = await getDoc(doc(db, 'planSettings', 'standardPlanValues'));
+      if (snap.exists()) {
+        const overrides = snap.data();
+        currentStandardPlans = DEFAULT_STANDARD_PLANS.map(p => {
+          const key = 'plan_' + p.id;
+          if (overrides[key]) {
+            const o = overrides[key];
+            return { ...p, name: o.name || p.name, emoji: o.emoji || p.emoji, invest: o.invest ?? p.invest, profit: o.profit ?? p.profit, days: o.days ?? p.days, total: (o.invest ?? p.invest) + (o.profit ?? p.profit) };
+          }
+          return p;
+        });
+      }
+    } catch (e) { /* silent */ }
+  }
+
+  window.switchTab = (tab) => {
+    currentTab = tab;
+    document.querySelectorAll('.tab-pill').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    const tabs = ['standard','limited','vip','all'];
+    const idx = tabs.indexOf(tab);
+    if(idx>=0) {
+      document.querySelectorAll('.tab-pill')[idx].classList.add('active');
+      document.getElementById('tab-'+tab).classList.add('active');
+      if(tab==='standard') renderStandardPlans();
+      if(tab==='limited') loadPlans('limitedPlans','limitedPlansGrid');
+      if(tab==='vip') loadPlans('vipPlans','vipPlansGrid');
+      if(tab==='all') loadAllInvestments();
+    }
+  };
+
+  // Helper: is this raw quantity value "no limit" (blank/null/undefined)?
+  function qtyIsEmpty(v) { return v === '' || v === null || v === undefined; }
+  // Helper: safely format a quantity value for an <input value="..."> — the old code used
+  // `maxQty || ''`, which incorrectly blanked out a genuinely-saved 0 (since 0 is falsy in JS).
+  function qtyInputValue(v) { return qtyIsEmpty(v) ? '' : v; }
+
+  async function renderStandardPlans() {
+    await loadStandardPlanOverrides();
+    const qSnap = await getDoc(doc(db, 'planSettings', 'quantities'));
+    const quantities = qSnap.exists() ? qSnap.data() : {};
+    document.getElementById('standardPlansGrid').innerHTML = currentStandardPlans.map(p => {
+      const maxQty = quantities['plan_' + p.id] ?? '';
+      const perUserLimit = quantities['plan_' + p.id + '_perUser'] ?? '';
+      const sold = quantities['plan_' + p.id + '_sold'] || 0;
+      const remaining = !qtyIsEmpty(maxQty) ? maxQty - sold : '∞';
+      return `<div class="plan-card">
+        <h4><span class="emoji">${p.emoji}</span>${p.name}</h4>
+        <div class="plan-detail"><span>Investment</span><span>${formatNaira(p.invest)}</span></div>
+        <div class="plan-detail"><span>Profit</span><span style="color:var(--success);">+${formatNaira(p.profit)}</span></div>
+        <div class="plan-detail"><span>Duration</span><span>${p.days} Days</span></div>
+        <div class="plan-detail"><span>Total Return</span><span style="color:var(--success);">${formatNaira(p.total)}</span></div>
+        <div class="plan-detail"><span>Global Slots</span><span style="color:var(--warning);">${sold} / ${!qtyIsEmpty(maxQty) ? maxQty : '∞'} sold</span></div>
+        <div class="qty-row">
+          <div class="qty-field"><label>🌍 Global Max Slots</label><input type="number" class="form-input qty-input" id="qty_${p.id}" value="${qtyInputValue(maxQty)}" placeholder="Unlimited" /><div class="slot-info global">${!qtyIsEmpty(maxQty) ? remaining + ' slots left' : 'Unlimited slots'}</div></div>
+          <div class="qty-field"><label>👤 Per-User Limit</label><input type="number" class="form-input qty-input" id="peruser_${p.id}" value="${qtyInputValue(perUserLimit)}" placeholder="Unlimited" /><div class="slot-info peruser">${!qtyIsEmpty(perUserLimit) ? 'Max ' + perUserLimit + ' per user' : 'No per-user limit'}</div></div>
+        </div>
+        <div class="plan-actions"><button class="action-btn edit" onclick="editStandardPlan(${p.id})">✏️ Edit Values</button></div>
+      </div>`;
+    }).join('');
+  }
+
+  // Reads every quantity/per-user input on the page directly at save-time, instead of relying
+  // on onchange events having already fired. This is the fix for "quantity changes not saving" —
+  // previously, editing a field and tapping Save immediately (without tapping elsewhere first
+  // to blur the field) meant the edit was never captured in memory at all.
+  window.saveStandardQuantities = function() {
+    const updates = {};
+    let anyFieldFound = false;
+    currentStandardPlans.forEach(p => {
+      const qtyInput = document.getElementById('qty_' + p.id);
+      const perUserInput = document.getElementById('peruser_' + p.id);
+      if (qtyInput) {
+        anyFieldFound = true;
+        updates['plan_' + p.id] = qtyInput.value === '' ? null : parseInt(qtyInput.value, 10);
+      }
+      if (perUserInput) {
+        anyFieldFound = true;
+        updates['plan_' + p.id + '_perUser'] = perUserInput.value === '' ? null : parseInt(perUserInput.value, 10);
+      }
+    });
+    if (!anyFieldFound) { showToast('error', 'Nothing to Save', 'No quantity fields found.'); return; }
+
+    openConfirmSaveModal(async () => {
+      try {
+        await setDoc(doc(db, 'planSettings', 'quantities'), updates, { merge: true });
+        showToast('success', 'Saved! ✅', 'Limits & quantities updated for every plan.');
+        renderStandardPlans();
+      } catch (e) {
+        console.error('Save quantities error:', e);
+        showToast('error', 'Error', e.message || 'Failed to save.');
+      }
+    });
+  };
+
+  window.editStandardPlan = (id) => {
+    const p = currentStandardPlans.find(x => x.id === id);
+    if (!p) return;
+    document.getElementById('stdEditId').value = id;
+    document.getElementById('stdEditName').value = p.name;
+    document.getElementById('stdEditEmoji').value = p.emoji;
+    document.getElementById('stdEditInvest').value = p.invest;
+    document.getElementById('stdEditProfit').value = p.profit;
+    document.getElementById('stdEditDays').value = p.days;
+    document.getElementById('standardEditModal').classList.add('show');
+  };
+  window.closeStandardEditModal = () => document.getElementById('standardEditModal').classList.remove('show');
+
+  window.saveStandardEdit = function() {
+    const id = parseInt(document.getElementById('stdEditId').value);
+    const name = document.getElementById('stdEditName').value.trim();
+    const emoji = document.getElementById('stdEditEmoji').value.trim() || '🔥';
+    const invest = Number(document.getElementById('stdEditInvest').value);
+    const profit = Number(document.getElementById('stdEditProfit').value);
+    const days = Number(document.getElementById('stdEditDays').value);
+    if (!name || !invest || !profit || !days) { showToast('error', 'Missing Fields', 'Fill all required fields.'); return; }
+
+    openConfirmSaveModal(async () => {
+      try {
+        const key = 'plan_' + id;
+        const updateData = {};
+        updateData[key] = { name, emoji, invest, profit, days, total: invest + profit };
+        await setDoc(doc(db, 'planSettings', 'standardPlanValues'), updateData, { merge: true });
+        closeStandardEditModal();
+        showToast('success', 'Updated! ✅', 'Plan values saved. User side reflects changes.');
+        await loadStandardPlanOverrides();
+        renderStandardPlans();
+      } catch (e) {
+        console.error('Save standard edit error:', e);
+        showToast('error', 'Error', e.message || 'Failed to save.');
+      }
+    });
+  };
+
+  // ============ LIMITED & VIP PLANS ============
+  async function loadPlans(coll, gridId) {
+    const grid = document.getElementById(gridId);
+    try {
+      const q = query(collection(db, coll), orderBy('name'));
+      const snap = await getDocs(q);
+      if (snap.empty) { grid.innerHTML = '<div class="no-data">No plans yet.</div>'; return; }
+      grid.innerHTML = '';
+      snap.forEach(d => {
+        const p = d.data();
+        const maxQty = p.maxQty ?? null, perUserLimit = p.perUserLimit ?? null, sold = p.sold || 0;
+        // NOTE: matches investments.html's semantics — 0 currently means "unlimited," not
+        // "sold out," same as the user-facing page. If you want 0 to mean "0 slots available"
+        // instead, that needs changing in both places together, or admins can just deactivate
+        // the plan instead of setting 0.
+        const hasGlobal = maxQty > 0;
+        const hasPerUser = perUserLimit > 0;
+        const now = new Date();
+        const startDate = p.startDate?.toDate ? p.startDate.toDate() : null;
+        const endDate = p.endDate?.toDate ? p.endDate.toDate() : null;
+        const notStarted = startDate && now < startDate;
+        const expired = endDate && now > endDate;
+        let timeStatus = '';
+        if (notStarted) timeStatus = `<span style="color:var(--info);font-size:0.6rem;">⏳ Starts ${formatDate(p.startDate)}</span>`;
+        else if (expired) timeStatus = `<span style="color:var(--error);font-size:0.6rem;">⏰ Ended ${formatDate(p.endDate)}</span>`;
+        else if (startDate || endDate) timeStatus = `<span style="color:var(--success);font-size:0.6rem;">🟢 Active</span>`;
+
+        grid.innerHTML += `<div class="plan-card">
+          <h4><span class="emoji">${p.emoji||'🔥'}</span>${p.name} <span style="font-size:0.6rem;color:${p.active?'var(--success)':'var(--error)'};">${p.active?'● Active':'○ Inactive'}</span>${timeStatus}</h4>
+          <div class="plan-detail"><span>Investment</span><span>${formatNaira(p.invest)}</span></div>
+          <div class="plan-detail"><span>Profit</span><span style="color:var(--success);">+${formatNaira(p.profit)}</span></div>
+          <div class="plan-detail"><span>Duration</span><span>${p.days} Days</span></div>
+          <div class="plan-detail"><span>Total Return</span><span style="color:var(--success);">${formatNaira(p.total)}</span></div>
+          <div class="plan-detail"><span>🌍 Global Slots</span><span style="color:var(--warning);">${hasGlobal ? sold + ' / ' + maxQty + ' sold' : 'Unlimited'}</span></div>
+          <div class="plan-detail"><span>👤 Per-User</span><span style="color:var(--info);">${hasPerUser ? perUserLimit + ' per user' : 'No limit'}</span></div>
+          ${startDate?`<div class="plan-detail"><span>Starts</span><span>${formatDate(p.startDate)}</span></div>`:''}
+          ${endDate?`<div class="plan-detail"><span>Ends</span><span>${formatDate(p.endDate)}</span></div>`:''}
+          <div class="plan-actions">
+            <button class="action-btn edit" onclick="editPlan('${d.id}','${coll}')">✏️ Edit</button>
+            <button class="action-btn toggle ${p.active?'':'off'}" onclick="togglePlan('${d.id}','${coll}',${p.active})">${p.active?'Deactivate':'Activate'}</button>
+            <button class="action-btn delete" onclick="deletePlanConfirm('${d.id}','${coll}')">🗑️</button>
+          </div>
+        </div>`;
+      });
+    } catch (e) {
+      console.error('Load plans error:', e);
+      grid.innerHTML = '<div class="no-data">Failed to load plans — check console.</div>';
+    }
+  }
+
+  window.openAddModal = (type) => {
+    currentEditId = null; currentPlanType = type;
+    document.getElementById('modalTitle').textContent = type === 'limited' ? '⚡ Add Limited Plan' : '👑 Add VIP Package';
+    document.getElementById('planName').value = ''; document.getElementById('planEmoji').value = '🔥';
+    document.getElementById('planInvest').value = ''; document.getElementById('planProfit').value = '';
+    document.getElementById('planDays').value = ''; document.getElementById('planQty').value = '';
+    document.getElementById('planPerUserLimit').value = '';
+    document.getElementById('dateRow').style.display = type === 'limited' ? 'grid' : 'none';
+    document.getElementById('planStart').value = ''; document.getElementById('planEnd').value = '';
+    document.getElementById('planModal').classList.add('show');
+  };
+
+  window.editPlan = async (id, coll) => {
+    const snap = await getDoc(doc(db, coll, id));
+    if (!snap.exists()) return;
+    const p = snap.data();
+    currentEditId = id; currentPlanType = coll;
+    document.getElementById('modalTitle').textContent = '✏️ Edit Plan';
+    document.getElementById('planName').value = p.name || '';
+    document.getElementById('planEmoji').value = p.emoji || '🔥';
+    document.getElementById('planInvest').value = p.invest || '';
+    document.getElementById('planProfit').value = p.profit || '';
+    document.getElementById('planDays').value = p.days || '';
+    document.getElementById('planQty').value = qtyInputValue(p.maxQty ?? null);
+    document.getElementById('planPerUserLimit').value = qtyInputValue(p.perUserLimit ?? null);
+    document.getElementById('dateRow').style.display = coll === 'limitedPlans' ? 'grid' : 'none';
+    if (p.startDate?.toDate) document.getElementById('planStart').value = p.startDate.toDate().toISOString().slice(0, 16);
+    else document.getElementById('planStart').value = '';
+    if (p.endDate?.toDate) document.getElementById('planEnd').value = p.endDate.toDate().toISOString().slice(0, 16);
+    else document.getElementById('planEnd').value = '';
+    document.getElementById('planModal').classList.add('show');
+  };
+
+  window.closePlanModal = () => document.getElementById('planModal').classList.remove('show');
+
+  window.savePlan = function() {
+    const name = document.getElementById('planName').value.trim();
+    const emoji = document.getElementById('planEmoji').value.trim() || '🔥';
+    const invest = Number(document.getElementById('planInvest').value);
+    const profit = Number(document.getElementById('planProfit').value);
+    const days = Number(document.getElementById('planDays').value);
+    const qtyVal = document.getElementById('planQty').value;
+    const maxQty = qtyVal === '' ? null : parseInt(qtyVal, 10);
+    const perUserVal = document.getElementById('planPerUserLimit').value;
+    const perUserLimit = perUserVal === '' ? null : parseInt(perUserVal, 10);
+    const startDate = document.getElementById('planStart').value ? new Date(document.getElementById('planStart').value) : null;
+    const endDate = document.getElementById('planEnd').value ? new Date(document.getElementById('planEnd').value) : null;
+
+    if (!name || !invest || !profit || !days) { showToast('error', 'Missing Fields', 'Fill all required fields.'); return; }
+
+    const data = { name, emoji, invest, profit, days, total: invest + profit, maxQty, perUserLimit, active: true, updatedAt: serverTimestamp() };
+    if (startDate) data.startDate = startDate;
+    if (endDate) data.endDate = endDate;
+
+    openConfirmSaveModal(async () => {
+      try {
+        const coll = currentPlanType === 'limited' ? 'limitedPlans' : 'vipPlans';
+        if (currentEditId) await updateDoc(doc(db, coll, currentEditId), data);
+        else await addDoc(collection(db, coll), { ...data, createdAt: serverTimestamp(), sold: 0 });
+        closePlanModal();
+        showToast('success', 'Saved! ✅', 'Plan has been saved successfully.');
+        if (currentTab === 'limited') loadPlans('limitedPlans', 'limitedPlansGrid');
+        else loadPlans('vipPlans', 'vipPlansGrid');
+      } catch (e) {
+        console.error('Save plan error:', e);
+        showToast('error', 'Error', e.message || 'Failed to save plan.');
+      }
+    });
+  };
+
+  window.togglePlan = async (id, coll, cur) => {
+    try {
+      await updateDoc(doc(db, coll, id), { active: !cur });
+      showToast('success', cur ? 'Deactivated' : 'Activated', `Plan ${cur ? 'deactivated' : 'activated'}!`);
+      loadPlans(coll, coll === 'limitedPlans' ? 'limitedPlansGrid' : 'vipPlansGrid');
+    } catch (e) {
+      console.error('Toggle plan error:', e);
+      showToast('error', 'Error', e.message || 'Failed to toggle plan.');
+    }
+  };
+
+  window.deletePlanConfirm = (id, coll) => openConfirmDeleteModal(id, coll);
+
+  async function loadAllInvestments() {
+    const list = document.getElementById('allInvestmentsList');
+    const search = document.getElementById('investmentSearch').value.toLowerCase();
+    try {
+      const q = query(collection(db, 'investments'), orderBy('createdAt', 'desc'));
+      const snap = await getDocs(q);
+      if (snap.empty) { list.innerHTML = '<div class="no-data">No investments</div>'; return; }
+      let invs = [];
+      for (const d of snap.docs) { const i = d.data(); const us = await getDoc(doc(db, 'users', i.uid)); i.email = us.exists() ? us.data().email : 'Unknown'; invs.push(i); }
+      if (search) invs = invs.filter(i => (i.email || '').toLowerCase().includes(search) || (i.planName || '').toLowerCase().includes(search));
+      list.innerHTML = invs.map(i => `<div class="table-row"><span>${maskEmail(i.email)}</span><span>${i.planName||'N/A'}</span><span>${formatNaira(i.amount)}</span><span style="color:var(--success);">${formatNaira(i.totalProfit||0)}</span><span>${i.totalDays||0}d</span><span><span class="status-badge ${i.status}">${i.status}</span></span><span>${formatDate(i.createdAt)}</span></div>`).join('');
+    } catch (e) {
+      console.error('Load all investments error:', e);
+      list.innerHTML = '<div class="no-data">Failed to load — check console.</div>';
+    }
+  }
+
+  onAuthStateChanged(auth, async (u) => {
+    if (u) { const ad = await getDoc(doc(db, 'adminUsers', u.uid)); if (ad.exists() && ad.data().role === 'admin') { await loadStandardPlanOverrides(); renderStandardPlans(); } else window.location.href = 'admin-login.html'; }
+    else window.location.href = 'admin-login.html';
+  });
+</script>
+</body>
+</html>
