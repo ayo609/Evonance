@@ -1,0 +1,828 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
+  <title>Evonance – Investments</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Playfair+Display:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #f5f3ff; --surface: #ffffff; --elevated: #faf9ff; --elevated-hover: #f3efff;
+      --primary: #7c3aed; --primary-glow: #a78bfa; --primary-shine: #8b5cf6;
+      --primary-muted: rgba(124,58,237,0.08);
+      --gold: #f0b90b; --gold-muted: rgba(240,185,11,0.1);
+      --text: #1e1b2e; --text-secondary: #4c4760; --text-muted: #8a849c;
+      --border-subtle: rgba(124,58,237,0.08); --border-soft: rgba(124,58,237,0.15);
+      --border-glow: rgba(124,58,237,0.35); --success: #10b981; --error: #ef4444;
+      --warning: #f59e0b; --info: #3b82f6;
+      --radius-sm: 10px; --radius-md: 16px; --radius-lg: 22px; --radius-xl: 28px;
+      --shadow-elevated: 0 2px 4px rgba(124,58,237,0.04), 0 8px 32px rgba(124,58,237,0.08);
+      --shadow-btn: 0 4px 20px rgba(124,58,237,0.3);
+    }
+
+    body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); min-height: 100vh; color: var(--text); padding-bottom: 90px; position: relative; }
+    #ambientCanvas { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
+
+    .topbar { position: sticky; top: 0; z-index: 100; background: rgba(255,255,255,0.9); backdrop-filter: blur(24px); border-bottom: 1px solid var(--border-subtle); padding: 0 20px; }
+    .topbar-inner { max-width: 1000px; margin: 0 auto; display: flex; align-items: center; height: 58px; gap: 14px; }
+    .back-btn { background: var(--elevated); border: 1px solid var(--border-soft); border-radius: 50%; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text-secondary); text-decoration: none; transition: all 0.25s; flex-shrink: 0; }
+    .back-btn:hover { border-color: var(--border-glow); color: var(--primary); }
+    .back-btn svg { width: 17px; height: 17px; }
+    .topbar-title { font-family: 'Playfair Display', serif; font-size: 1.3rem; font-weight: 700; letter-spacing: -0.5px; flex: 1; }
+    .balance-chip { display: flex; align-items: center; gap: 6px; background: var(--primary-muted); border: 1px solid rgba(124,58,237,0.2); border-radius: 50px; padding: 7px 14px; font-size: 0.75rem; font-weight: 700; color: var(--primary); white-space: nowrap; }
+    .balance-chip svg { width: 13px; height: 13px; }
+
+    .main-layout { max-width: 1000px; margin: 0 auto; padding: 20px; display: flex; flex-direction: column; gap: 16px; position: relative; z-index: 1; }
+    .info-strip { background: var(--surface); border: 1px solid rgba(124,58,237,0.15); border-radius: var(--radius-lg); padding: 13px 18px; display: flex; align-items: center; gap: 10px; font-size: 0.78rem; color: var(--text-secondary); box-shadow: var(--shadow-elevated); }
+    .info-strip svg { width: 18px; height: 18px; color: var(--primary); flex-shrink: 0; }
+    .info-strip strong { color: var(--primary); }
+
+    .tab-bar { display: flex; gap: 4px; background: var(--surface); border: 1px solid var(--border-subtle); border-radius: 50px; padding: 5px; overflow-x: auto; box-shadow: var(--shadow-elevated); }
+    .tab-pill { flex: 1; padding: 11px 16px; border: none; background: transparent; color: var(--text-muted); font-family: inherit; font-size: 0.78rem; font-weight: 600; cursor: pointer; border-radius: 50px; transition: all 0.3s; text-align: center; white-space: nowrap; }
+    .tab-pill.active { background: var(--primary); color: #fff; box-shadow: 0 4px 16px rgba(124,58,237,0.3); }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    .plans-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 14px; }
+    .plan-card { background: var(--surface); border: 1px solid var(--border-subtle); border-radius: var(--radius-xl); padding: 22px 20px; position: relative; transition: all 0.3s; display: flex; flex-direction: column; box-shadow: var(--shadow-elevated); }
+    .plan-card:hover { border-color: var(--border-glow); transform: translateY(-2px); }
+    .plan-card.featured { border-color: rgba(240,185,11,0.3); }
+    .plan-card.vip-card { border-color: rgba(124,58,237,0.3); }
+    .plan-card.not-eligible { opacity: 0.6; }
+    .plan-card.sold-out { opacity: 0.55; pointer-events: none; }
+    .plan-badge { position: absolute; top: 14px; right: 14px; font-size: 0.6rem; font-weight: 800; padding: 5px 10px; border-radius: 50px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .plan-badge.popular { background: linear-gradient(135deg, #f59e0b, #fbbf24); color: #000; }
+    .plan-badge.limited { background: linear-gradient(135deg, #ef4444, #f87171); color: #fff; }
+    .plan-badge.vip-badge { background: linear-gradient(135deg, #8b5cf6, #7c3aed); color: #fff; }
+    .plan-icon-wrap { width: 44px; height: 44px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; margin-bottom: 12px; }
+    .plan-icon-wrap.bronze { background: rgba(205,127,50,0.15); }
+    .plan-icon-wrap.silver { background: rgba(192,192,192,0.12); }
+    .plan-icon-wrap.gold { background: rgba(255,215,0,0.12); }
+    .plan-icon-wrap.platinum { background: rgba(16,185,129,0.12); }
+    .plan-icon-wrap.diamond { background: rgba(59,130,246,0.12); }
+    .plan-icon-wrap.vip { background: rgba(124,58,237,0.12); }
+    .plan-icon-wrap.elite { background: rgba(245,158,11,0.12); }
+    .plan-icon-wrap.legend { background: rgba(239,68,68,0.12); }
+    .plan-icon-wrap.ultimate { background: rgba(236,72,153,0.12); }
+    .plan-name { font-family: 'Playfair Display', serif; font-size: 1.05rem; font-weight: 700; margin-bottom: 14px; letter-spacing: -0.3px; }
+    .plan-details { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; flex: 1; }
+    .plan-detail-row { display: flex; justify-content: space-between; font-size: 0.76rem; color: var(--text-muted); padding: 6px 0; border-bottom: 1px solid var(--border-subtle); }
+    .plan-detail-row:last-child { border-bottom: none; }
+    .plan-detail-row span:last-child { font-weight: 600; color: var(--text); }
+    .plan-detail-row .profit-val { color: var(--success); }
+    .req-tags { display: flex; flex-direction: column; gap: 4px; margin-bottom: 10px; }
+    .req-tag { font-size: 0.66rem; font-weight: 600; padding: 5px 10px; border-radius: 6px; text-align: center; }
+    .req-tag.met { color: var(--success); background: rgba(16,185,129,0.06); }
+    .req-tag.unmet { color: var(--error); background: rgba(239,68,68,0.06); }
+    .req-tag.info { color: var(--primary); background: var(--primary-muted); }
+    .invest-btn { width: 100%; padding: 12px; background: linear-gradient(135deg, var(--primary-shine), var(--primary), #6d28d9); color: #fff; border: none; border-radius: 50px; font-family: inherit; font-size: 0.85rem; font-weight: 700; cursor: pointer; transition: all 0.3s; letter-spacing: 0.3px; position: relative; overflow: hidden; box-shadow: var(--shadow-btn); }
+    .invest-btn:hover:not(:disabled) { box-shadow: 0 8px 28px rgba(124,58,237,0.4); transform: translateY(-1px); }
+    .invest-btn:disabled { opacity: 0.4; cursor: not-allowed; background: #d1d5db; color: #9ca3af; box-shadow: none; }
+    .view-req-btn { width: 100%; padding: 8px; background: transparent; border: 1px solid var(--border-soft); border-radius: 50px; font-family: inherit; font-size: 0.7rem; font-weight: 600; cursor: pointer; transition: all 0.2s; color: var(--primary); margin-top: 6px; }
+    .view-req-btn:hover { background: var(--primary-muted); }
+
+    .inv-list { display: flex; flex-direction: column; gap: 12px; }
+    .inv-card { background: var(--surface); border: 1px solid var(--border-subtle); border-radius: var(--radius-xl); padding: 20px 22px; box-shadow: var(--shadow-elevated); }
+    .inv-card-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+    .inv-card-plan { display: flex; align-items: center; gap: 10px; }
+    .inv-card-icon { width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; }
+    .inv-card-icon.standard { background: rgba(16,185,129,0.1); }
+    .inv-card-icon.limited { background: rgba(239,68,68,0.08); }
+    .inv-card-icon.vip { background: rgba(124,58,237,0.1); }
+    .inv-card-name { font-weight: 700; font-size: 0.9rem; }
+    .inv-card-type { font-size: 0.62rem; color: var(--text-muted); text-transform: uppercase; }
+    .inv-status-badge { font-size: 0.62rem; font-weight: 700; padding: 5px 10px; border-radius: 50px; text-transform: uppercase; }
+    .inv-status-badge.active { background: rgba(16,185,129,0.1); color: var(--success); }
+    .inv-status-badge.completed { background: rgba(59,130,246,0.1); color: #60a5fa; }
+    .inv-progress-wrap { margin-bottom: 14px; }
+    .inv-progress-header { display: flex; justify-content: space-between; font-size: 0.68rem; color: var(--text-muted); margin-bottom: 6px; }
+    .inv-progress-bar { height: 8px; background: var(--border-soft); border-radius: 4px; overflow: hidden; }
+    .inv-progress-fill { height: 100%; background: linear-gradient(90deg, var(--primary-shine), var(--primary)); border-radius: 4px; }
+    .inv-detail-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 10px; }
+    .inv-detail-cell { background: var(--elevated); border-radius: var(--radius-sm); padding: 10px 12px; text-align: center; }
+    .inv-detail-val { font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; font-weight: 700; color: var(--text); }
+    .inv-detail-val.profit { color: var(--success); }
+    .inv-detail-lbl { font-size: 0.58rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 3px; }
+    .inv-card-footer { display: flex; justify-content: space-between; font-size: 0.68rem; color: var(--text-muted); padding-top: 8px; border-top: 1px solid var(--border-subtle); }
+    .inv-maturity-date { color: var(--primary); font-weight: 600; }
+
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); z-index: 200; align-items: center; justify-content: center; padding: 20px; }
+    .modal-overlay.show { display: flex; }
+    .modal-dialog { background: var(--surface); border: 1px solid var(--border-soft); border-radius: var(--radius-xl); padding: 28px; max-width: 420px; width: 100%; max-height: 85vh; overflow-y: auto; animation: modalPop 0.3s ease; }
+    @keyframes modalPop { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
+    .modal-dialog h3 { font-family: 'Playfair Display', serif; font-size: 1.15rem; font-weight: 700; margin-bottom: 16px; text-align: center; }
+    .modal-info { background: var(--elevated); border-radius: var(--radius-md); padding: 14px 16px; margin-bottom: 18px; }
+    .modal-info-row { display: flex; justify-content: space-between; padding: 7px 0; font-size: 0.82rem; border-bottom: 1px solid var(--border-subtle); }
+    .modal-info-row:last-child { border-bottom: none; }
+    .modal-info-row span:first-child { color: var(--text-muted); }
+    .modal-info-row span:last-child { font-weight: 600; }
+    .modal-btns { display: flex; gap: 8px; }
+    .modal-btn { flex: 1; padding: 12px; border-radius: 50px; font-family: inherit; font-size: 0.85rem; font-weight: 700; cursor: pointer; border: none; }
+    .modal-btn.cancel { background: var(--elevated); color: var(--text); border: 1px solid var(--border-soft); }
+    .modal-btn.confirm { background: var(--primary); color: #fff; }
+    .modal-spinner { width: 18px; height: 18px; border: 2.5px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite; display: none; margin: 0 auto; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .empty-state { text-align: center; padding: 40px 20px; color: var(--text-muted); }
+    .empty-state-icon { font-size: 3rem; margin-bottom: 12px; opacity: 0.5; }
+    .empty-state h3 { font-size: 1rem; color: var(--text); margin-bottom: 4px; }
+    .empty-state p { font-size: 0.8rem; }
+
+    .bottom-nav { position: fixed; bottom: 12px; left: 50%; transform: translateX(-50%); z-index: 100; background: var(--surface); border: 1px solid var(--border-soft); border-radius: 50px; display: flex; padding: 6px 8px; gap: 2px; box-shadow: 0 8px 40px rgba(124,58,237,0.2); }
+    .nav-item { display: flex; align-items: center; gap: 6px; padding: 10px 16px; border-radius: 50px; text-decoration: none; color: var(--text-muted); font-size: 0.7rem; font-weight: 600; }
+    .nav-item.active { background: var(--primary); color: #fff; box-shadow: 0 4px 16px rgba(124,58,237,0.3); }
+    .nav-item svg { width: 18px; height: 18px; }
+
+    .toast-overlay { position: fixed; top: 20px; left: 20px; z-index: 300; display: flex; flex-direction: column; gap: 8px; pointer-events: none; }
+    .toast-item { background: var(--surface); border: 1px solid var(--border-soft); border-radius: var(--radius-md); padding: 14px 18px; display: flex; align-items: center; gap: 10px; box-shadow: 0 16px 40px rgba(124,58,237,0.2); transform: translateX(-120%); transition: transform 0.5s; pointer-events: auto; max-width: 380px; }
+    .toast-item.show { transform: translateX(0); }
+    .toast-item.success { border-left: 3px solid var(--success); }
+    .toast-item.error { border-left: 3px solid var(--error); }
+    .toast-icon-wrap { width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .toast-item.success .toast-icon-wrap { background: rgba(16,185,129,0.12); }
+    .toast-item.error .toast-icon-wrap { background: rgba(239,68,68,0.12); }
+    .toast-icon-wrap svg { width: 17px; height: 17px; color: var(--success); }
+    .toast-item.error .toast-icon-wrap svg { color: var(--error); }
+    .toast-text h4 { font-size: 0.85rem; font-weight: 700; }
+    .toast-text p { font-size: 0.73rem; color: var(--text-secondary); }
+
+    @media (max-width: 600px) {
+      .plans-grid { grid-template-columns: 1fr; }
+      .inv-detail-grid { grid-template-columns: repeat(2, 1fr); }
+      .tab-pill { font-size: 0.7rem; padding: 10px 8px; }
+      .bottom-nav { bottom: 6px; padding: 4px 6px; }
+      .nav-item { padding: 8px 10px; font-size: 0.6rem; }
+      .nav-item svg { width: 15px; height: 15px; }
+    }
+  </style>
+</head>
+<body>
+
+<canvas id="ambientCanvas"></canvas>
+<div class="toast-overlay" id="toastContainer"></div>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <a href="dashboard.html" class="back-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg></a>
+    <span class="topbar-title">Investments</span>
+    <div class="balance-chip" id="headerBalance"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg> ₦0.00</div>
+  </div>
+</header>
+
+<main class="main-layout">
+  <div class="info-strip">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+    <span>Standard plans have <strong>1 purchase limit per user</strong>. VIP packages require <strong>eligibility</strong>. Total Income credited after 1 day. Weekly salary is <strong>admin-managed</strong>.</span>
+  </div>
+
+  <div class="tab-bar">
+    <button class="tab-pill active" onclick="switchTab('plans')">📊 Standard</button>
+    <button class="tab-pill" onclick="switchTab('limited')">⚡ Limited</button>
+    <button class="tab-pill" onclick="switchTab('vip')">👑 VIP</button>
+    <button class="tab-pill" onclick="switchTab('myInvestments')">📋 My Investments</button>
+  </div>
+
+  <div class="tab-content active" id="tab-plans"><div class="plans-grid" id="plansGrid"></div></div>
+  <div class="tab-content" id="tab-limited"><div class="plans-grid" id="limitedPlansGrid"><div class="empty-state"><div class="empty-state-icon">⚡</div><h3>No Limited Offers</h3><p>Check back later.</p></div></div></div>
+  <div class="tab-content" id="tab-vip"><div class="plans-grid" id="vipPlansGrid"><div class="empty-state"><div class="empty-state-icon">👑</div><h3>Loading VIP Packages...</h3></div></div></div>
+  <div class="tab-content" id="tab-myInvestments"><div class="inv-list" id="myInvestmentsList"><div class="empty-state"><div class="empty-state-icon">📋</div><h3>No Investments Yet</h3><p>Start investing!</p></div></div></div>
+</main>
+
+<!-- Confirm Modal -->
+<div class="modal-overlay" id="confirmModal">
+  <div class="modal-dialog">
+    <h3>Confirm Investment</h3>
+    <div class="modal-info" id="modalDetails"></div>
+    <div class="modal-btns">
+      <button class="modal-btn cancel" onclick="closeConfirmModal()">Cancel</button>
+      <button class="modal-btn confirm" id="confirmBtn" onclick="confirmInvestment()">
+        <div class="modal-spinner" id="confirmSpinner"></div>
+        <span id="confirmText">Confirm (1 Slot)</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- VIP Requirements Modal -->
+<div class="modal-overlay" id="vipReqModal">
+  <div class="modal-dialog">
+    <h3 id="vipReqTitle">👑 VIP Requirements</h3>
+    <div class="modal-info" id="vipReqDetails"></div>
+    <div class="modal-btns"><button class="modal-btn cancel" onclick="closeVipReqModal()">Close</button></div>
+  </div>
+</div>
+
+<nav class="bottom-nav">
+  <a href="dashboard.html" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>Home</a>
+  <a href="deposit.html" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>Deposit</a>
+  <a href="withdraw.html" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="12" y1="10" x2="12" y2="18"/><polyline points="9 15 12 18 15 15"/></svg>Withdraw</a>
+  <a href="investments.html" class="nav-item active"><svg viewBox="0 0 24 24" fill="currentColor"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Invest</a>
+  <a href="profile.html" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Profile</a>
+</nav>
+
+<script>
+  (function(){
+    const c=document.getElementById('ambientCanvas'),ctx=c.getContext('2d');let w,h,pts=[];
+    function resize(){w=c.width=window.innerWidth;h=c.height=window.innerHeight;}
+    resize();window.addEventListener('resize',resize);
+    class Pt{
+      constructor(){this.reset();}
+      reset(){this.x=Math.random()*w;this.y=Math.random()*h;this.s=Math.random()*1.2+0.4;this.sx=(Math.random()-0.5)*0.2;this.sy=(Math.random()-0.5)*0.2;this.o=Math.random()*0.3+0.06;this.ps=Math.random()*0.015+0.004;this.po=Math.random()*Math.PI*2;this.h=Math.random()<0.7?270:(Math.random()<0.5?45:220);}
+      update(){this.x+=this.sx;this.y+=this.sy;if(this.x<-10)this.x=w+10;if(this.x>w+10)this.x=-10;if(this.y<-10)this.y=h+10;if(this.y>h+10)this.y=-10;}
+      draw(){const p=Math.sin(Date.now()*this.ps+this.po)*0.3+0.7,a=this.o*p;ctx.beginPath();ctx.arc(this.x,this.y,this.s,0,Math.PI*2);ctx.fillStyle=`hsla(${this.h},70%,55%,${a})`;ctx.fill();}
+    }
+    for(let i=0;i<60;i++)pts.push(new Pt());
+    function anim(){ctx.clearRect(0,0,w,h);pts.forEach(p=>{p.update();p.draw();});
+      for(let i=0;i<pts.length;i++){for(let j=i+1;j<pts.length;j++){const dx=pts[i].x-pts[j].x,dy=pts[i].y-pts[j].y,d=Math.sqrt(dx*dx+dy*dy);if(d<100){ctx.beginPath();ctx.moveTo(pts[i].x,pts[i].y);ctx.lineTo(pts[j].x,pts[j].y);ctx.strokeStyle=`rgba(124,58,237,${0.03*(1-d/100)})`;ctx.lineWidth=0.35;ctx.stroke();}}}
+      requestAnimationFrame(anim);}
+    anim();
+  })();
+</script>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+  import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, query, where, orderBy, getDocs, serverTimestamp, increment, addDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+  const firebaseConfig = { apiKey: "AIzaSyDT0ACobk5YMFgrqxb-VOnfELXTyssrOtA", authDomain: "newpro-d830e.firebaseapp.com", projectId: "newpro-d830e", storageBucket: "newpro-d830e.firebasestorage.app", messagingSenderId: "642315724384", appId: "1:642315724384:web:19def936898718e9300505" };
+  const app = initializeApp(firebaseConfig); const auth = getAuth(app); const db = getFirestore(app);
+
+  let currentUser = null, selectedPlanData = null;
+  let userLifetimeDeposits = 0;
+  let userReferralData = { level1: [] };
+  let userVipPurchases = []; // Track which VIPs the user has already purchased
+
+  const VIP_PLANS = [
+    { id: 1, name: 'VIP 1', emoji: '💎', invest: 20000, profit: 8000, total: 28000, days: 1, weeklySalary: 5000, reqDeposit: 30000, reqReferrals: 2, reqReferralDeposit: 8000 },
+    { id: 2, name: 'VIP 2', emoji: '💎', invest: 25000, profit: 15000, total: 40000, days: 1, weeklySalary: 15000, reqDeposit: 50000, reqReferrals: 5, reqReferralDeposit: 15000 },
+    { id: 3, name: 'VIP 3', emoji: '💎', invest: 40000, profit: 27500, total: 67500, days: 1, weeklySalary: 30000, reqDeposit: 100000, reqReferrals: 10, reqReferralDeposit: 25000 },
+    { id: 4, name: 'VIP 4', emoji: '💎', invest: 55000, profit: 50000, total: 105000, days: 1, weeklySalary: 50000, reqDeposit: 150000, reqReferrals: 15, reqReferralDeposit: 35000 },
+    { id: 5, name: 'VIP 5', emoji: '💎', invest: 80000, profit: 65000, total: 145000, days: 1, weeklySalary: 180000, reqDeposit: 250000, reqReferrals: 25, reqReferralDeposit: 50000 },
+    { id: 6, name: 'VIP 6', emoji: '💎', invest: 110000, profit: 95000, total: 205000, days: 1, weeklySalary: 250000, reqDeposit: 400000, reqReferrals: 35, reqReferralDeposit: 65000 },
+    { id: 7, name: 'VIP 7', emoji: '💎', invest: 180000, profit: 150000, total: 330000, days: 1, weeklySalary: 400000, reqDeposit: 700000, reqReferrals: 55, reqReferralDeposit: 75000 },
+    { id: 8, name: 'VIP 8', emoji: '💎', invest: 330000, profit: 220000, total: 550000, days: 1, weeklySalary: 700000, reqDeposit: 1000000, reqReferrals: 80, reqReferralDeposit: 100000 }
+  ];
+
+  const DEFAULT_STANDARD_PLANS = [
+    { id: 1, name: 'Starter Plan', icon: 'bronze', emoji: '🥉', invest: 7000, profit: 2800, days: 2, total: 9800 },
+    { id: 2, name: 'Basic Plan', icon: 'silver', emoji: '🥈', invest: 15000, profit: 7000, days: 6, total: 22000 },
+    { id: 3, name: 'Standard Plan', icon: 'gold', emoji: '🥇', invest: 25000, profit: 11000, days: 10, total: 36000 },
+    { id: 4, name: 'Premium Plan', icon: 'platinum', emoji: '💎', invest: 45000, profit: 25000, days: 20, total: 70000 },
+    { id: 5, name: 'Business Plan', icon: 'diamond', emoji: '💼', invest: 70000, profit: 70000, days: 30, total: 140000 },
+    { id: 6, name: 'Executive Plan', icon: 'vip', emoji: '👑', invest: 100000, profit: 120000, days: 40, total: 220000 },
+    { id: 7, name: 'Elite Plan', icon: 'elite', emoji: '🚀', invest: 150000, profit: 300000, days: 50, total: 450000 },
+    { id: 8, name: 'Legend Plan', icon: 'legend', emoji: '🏆', invest: 200000, profit: 500000, days: 60, total: 700000 },
+    { id: 9, name: 'Ultimate Plan', icon: 'ultimate', emoji: '🌟', invest: 300000, profit: 1200000, days: 90, total: 1500000 }
+  ];
+
+  function showToast(type, title, msg, d = 4000) {
+    const container = document.getElementById('toastContainer');
+    const toast = document.createElement('div');
+    toast.className = `toast-item ${type}`;
+    const iconSvg = type === 'error'
+      ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>'
+      : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>';
+    toast.innerHTML = `<div class="toast-icon-wrap">${iconSvg}</div><div class="toast-text"><h4>${title}</h4><p>${msg}</p></div>`;
+    container.appendChild(toast);
+    requestAnimationFrame(() => toast.classList.add('show'));
+    setTimeout(() => { toast.classList.remove('show'); setTimeout(() => toast.remove(), 500); }, d);
+  }
+
+  function formatNaira(a) { return '₦' + Number(a || 0).toLocaleString('en-NG', { minimumFractionDigits: 2 }); }
+  function formatDate(ts) { if (!ts) return ''; const d = ts.toDate ? ts.toDate() : new Date(ts); return d.toLocaleDateString('en-NG', { year: 'numeric', month: 'short', day: 'numeric' }); }
+
+  window.switchTab = function(tab) {
+    document.querySelectorAll('.tab-pill').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    const tabs = ['plans', 'limited', 'vip', 'myInvestments'];
+    const idx = tabs.indexOf(tab);
+    if (idx >= 0) {
+      document.querySelectorAll('.tab-pill')[idx].classList.add('active');
+      document.getElementById('tab-' + tab).classList.add('active');
+      if (tab === 'limited') loadLimitedPlans();
+      if (tab === 'vip') renderVipPlans();
+      if (tab === 'myInvestments') loadMyInvestments();
+    }
+  };
+
+  async function loadUserReferralData() {
+    if (!currentUser) return;
+    try {
+      const userSnap = await getDoc(doc(db, 'users', currentUser.uid));
+      if (userSnap.exists()) {
+        userLifetimeDeposits = Number(userSnap.data().totalDeposits) || 0;
+      }
+      const refSnap = await getDocs(query(collection(db, 'users'), where('referredBy', '==', currentUser.uid)));
+      userReferralData.level1 = [];
+      refSnap.forEach(d => {
+        userReferralData.level1.push({ uid: d.id, ...d.data() });
+      });
+      // Load user's VIP purchases
+      const vipSnap = await getDocs(query(collection(db, 'investments'), where('uid', '==', currentUser.uid), where('planType', '==', 'vip')));
+      userVipPurchases = [];
+      vipSnap.forEach(d => {
+        userVipPurchases.push(d.data().planId);
+      });
+    } catch (e) { console.error('Error loading referral data:', e); }
+  }
+
+  function checkVipEligibility(vipPlan) {
+    const hasDeposit = userLifetimeDeposits >= vipPlan.reqDeposit;
+    const eligibleReferrals = userReferralData.level1.filter(ref => {
+      return (Number(ref.totalDeposits) || 0) >= vipPlan.reqReferralDeposit;
+    }).length;
+    const hasReferrals = eligibleReferrals >= vipPlan.reqReferrals;
+    const alreadyPurchased = userVipPurchases.includes(String(vipPlan.id));
+    return {
+      eligible: hasDeposit && hasReferrals && !alreadyPurchased,
+      hasDeposit,
+      hasReferrals,
+      alreadyPurchased,
+      eligibleReferrals,
+      reqReferrals: vipPlan.reqReferrals,
+      reqDeposit: vipPlan.reqDeposit,
+      reqReferralDeposit: vipPlan.reqReferralDeposit
+    };
+  }
+
+  async function renderVipPlans() {
+    if (!currentUser) return;
+    await loadUserReferralData();
+    const grid = document.getElementById('vipPlansGrid');
+    
+    grid.innerHTML = VIP_PLANS.map(vip => {
+      const elig = checkVipEligibility(vip);
+      
+      let statusTag = '';
+      if (elig.alreadyPurchased) {
+        statusTag = `<div class="req-tag info">✅ Already Purchased — Move to next VIP</div>`;
+      } else if (!elig.eligible) {
+        if (!elig.hasDeposit) statusTag += `<div class="req-tag unmet">💰 Need ${formatNaira(vip.reqDeposit - userLifetimeDeposits)} more in deposits</div>`;
+        if (!elig.hasReferrals) statusTag += `<div class="req-tag unmet">👥 Need ${vip.reqReferrals - elig.eligibleReferrals} more referrals (min ${formatNaira(vip.reqReferralDeposit)} each)</div>`;
+      } else {
+        statusTag = `<div class="req-tag met">✅ Eligible</div>`;
+      }
+      
+      return `<div class="plan-card vip-card ${!elig.eligible ? 'not-eligible' : ''}">
+        <div class="plan-badge vip-badge">👑 VIP</div>
+        <div class="plan-icon-wrap vip">${vip.emoji}</div>
+        <div class="plan-name">${vip.name}</div>
+        <div class="plan-details">
+          <div class="plan-detail-row"><span>Investment</span><span>${formatNaira(vip.invest)}</span></div>
+          <div class="plan-detail-row"><span>Net Gain</span><span class="profit-val">+${formatNaira(vip.profit)}</span></div>
+          <div class="plan-detail-row"><span>Total Income</span><span style="color:var(--success);">${formatNaira(vip.total)}</span></div>
+          <div class="plan-detail-row"><span>Duration</span><span>1 Day</span></div>
+        </div>
+        <div class="req-tags">${statusTag}</div>
+        ${elig.eligible 
+          ? `<button class="invest-btn" onclick="openVipConfirmModal(${vip.id})">Invest ${formatNaira(vip.invest)}</button>`
+          : `<button class="invest-btn" disabled>${elig.alreadyPurchased ? '🔒 Already Purchased' : '🔒 Not Eligible'}</button>`}
+        <button class="view-req-btn" onclick="showVipRequirements(${vip.id})">📋 View Requirements</button>
+      </div>`;
+    }).join('');
+  }
+
+  window.showVipRequirements = function(vipId) {
+    const vip = VIP_PLANS.find(v => v.id === vipId);
+    if (!vip) return;
+    const elig = checkVipEligibility(vip);
+    document.getElementById('vipReqTitle').textContent = `👑 ${vip.name} Requirements`;
+    document.getElementById('vipReqDetails').innerHTML = `
+      <div class="modal-info-row"><span>Required Lifetime Deposit</span><span>${formatNaira(vip.reqDeposit)}</span></div>
+      <div class="modal-info-row"><span>Your Lifetime Deposits</span><span style="color:${elig.hasDeposit ? 'var(--success)' : 'var(--error)'};">${formatNaira(userLifetimeDeposits)}</span></div>
+      <div class="modal-info-row"><span>Required Referrals</span><span>${vip.reqReferrals} people</span></div>
+      <div class="modal-info-row"><span>Each Referral Must Deposit</span><span>${formatNaira(vip.reqReferralDeposit)}</span></div>
+      <div class="modal-info-row"><span>Your Eligible Referrals</span><span style="color:${elig.hasReferrals ? 'var(--success)' : 'var(--error)'};">${elig.eligibleReferrals}/${vip.reqReferrals}</span></div>
+      <div class="modal-info-row"><span>Already Purchased?</span><span>${elig.alreadyPurchased ? '✅ Yes' : '❌ No'}</span></div>
+      <div class="modal-info-row"><span>Status</span><span style="color:${elig.eligible ? 'var(--success)' : 'var(--error)'};font-weight:700;">${elig.alreadyPurchased ? '🔒 ALREADY PURCHASED' : elig.eligible ? '✅ ELIGIBLE' : '❌ NOT ELIGIBLE'}</span></div>
+      ${!elig.eligible && !elig.alreadyPurchased ? `<div style="padding:8px;background:var(--elevated);border-radius:8px;margin-top:8px;font-size:0.7rem;color:var(--text-muted);">${!elig.hasDeposit ? `You need ${formatNaira(vip.reqDeposit - userLifetimeDeposits)} more in lifetime deposits. ` : ''}${!elig.hasReferrals ? `You need ${vip.reqReferrals - elig.eligibleReferrals} more referrals who each deposit at least ${formatNaira(vip.reqReferralDeposit)}.` : ''}</div>` : ''}
+    `;
+    document.getElementById('vipReqModal').classList.add('show');
+  };
+
+  window.closeVipReqModal = () => document.getElementById('vipReqModal').classList.remove('show');
+
+  window.openVipConfirmModal = function(vipId) {
+    const vip = VIP_PLANS.find(v => v.id === vipId);
+    if (!vip) return;
+    selectedPlanData = {
+      id: vip.id,
+      name: vip.name,
+      invest: vip.invest,
+      profit: vip.profit,
+      total: vip.total,
+      days: vip.days,
+      type: 'vip',
+      maxQty: null,
+      sold: 0,
+      perUserLimit: 1,
+      userCount: 0,
+      weeklySalary: vip.weeklySalary,
+      isVip: true
+    };
+    showModal();
+  };
+
+  async function getStandardPlansWithOverrides() {
+    let plans = DEFAULT_STANDARD_PLANS.map(p => ({ ...p }));
+    try {
+      const snap = await getDoc(doc(db, 'planSettings', 'standardPlanValues'));
+      if (snap.exists()) {
+        const overrides = snap.data();
+        plans = plans.map(p => {
+          const key = 'plan_' + p.id;
+          if (overrides[key]) {
+            const o = overrides[key];
+            const invest = o.invest ?? p.invest;
+            const profit = o.profit ?? p.profit;
+            const days = o.days ?? p.days;
+            return { ...p, name: o.name || p.name, emoji: o.emoji || p.emoji, invest, profit, days, total: invest + profit };
+          }
+          return p;
+        });
+      }
+    } catch (e) { /* silent */ }
+    return plans;
+  }
+
+  async function getUserPurchaseCount(planId, planType) {
+    if (!currentUser) return 0;
+    try {
+      const q = query(collection(db, 'investments'), where('uid', '==', currentUser.uid), where('planId', '==', String(planId)), where('planType', '==', planType));
+      const snap = await getDocs(q);
+      return snap.size;
+    } catch (e) { return 0; }
+  }
+
+  async function renderPlans() {
+    const plans = await getStandardPlansWithOverrides();
+    const userCounts = {};
+    if (currentUser) {
+      const q = query(collection(db, 'investments'), where('uid', '==', currentUser.uid), where('planType', '==', 'standard'));
+      const snap = await getDocs(q);
+      snap.forEach(d => { const inv = d.data(); userCounts[inv.planId] = (userCounts[inv.planId] || 0) + 1; });
+    }
+    document.getElementById('plansGrid').innerHTML = plans.map(p => {
+      const perUserLimit = 1;
+      const userCount = userCounts[String(p.id)] || 0;
+      const userOut = userCount >= perUserLimit;
+      return `<div class="plan-card ${p.id===5?'featured':''} ${userOut?'sold-out':''}">
+        ${p.id===5?'<div class="plan-badge popular">Popular</div>':''}
+        <div class="plan-icon-wrap ${p.icon}">${p.emoji}</div><div class="plan-name">${p.name}</div>
+        <div class="plan-details">
+          <div class="plan-detail-row"><span>Investment</span><span>${formatNaira(p.invest)}</span></div>
+          <div class="plan-detail-row"><span>Profit</span><span class="profit-val">+${formatNaira(p.profit)}</span></div>
+          <div class="plan-detail-row"><span>Duration</span><span>${p.days} Days</span></div>
+          <div class="plan-detail-row"><span>Total Return</span><span style="color:var(--success);">${formatNaira(p.total)}</span></div>
+          <div class="plan-detail-row"><span>Payout</span><span>End of ${p.days} days</span></div>
+        </div>
+        <div class="req-tags"><div class="req-tag ${userOut ? 'unmet' : 'met'}">👤 ${userCount}/${perUserLimit} purchased</div></div>
+        ${!userOut ? `<button class="invest-btn" onclick="openStandardConfirmModal(${p.id})">Invest ${formatNaira(p.invest)} (1 Slot)</button>` : `<button class="invest-btn" disabled>🔒 Already Purchased</button>`}
+      </div>`;
+    }).join('');
+  }
+
+  async function loadLimitedPlans() {
+    const grid = document.getElementById('limitedPlansGrid');
+    try {
+      const q = query(collection(db, 'limitedPlans'), where('active', '==', true));
+      const snap = await getDocs(q);
+      if (snap.empty) { grid.innerHTML = '<div class="empty-state"><div class="empty-state-icon">⚡</div><h3>No Limited Offers</h3><p>Check back later.</p></div>'; return; }
+      const userCounts = {};
+      if (currentUser) {
+        const uq = query(collection(db, 'investments'), where('uid', '==', currentUser.uid), where('planType', '==', 'limited'));
+        const usnap = await getDocs(uq);
+        usnap.forEach(d => { const inv = d.data(); userCounts[inv.planId] = (userCounts[inv.planId] || 0) + 1; });
+      }
+      const now = new Date();
+      grid.innerHTML = '';
+      snap.forEach(d => {
+        const p = d.data();
+        const startDate = p.startDate?.toDate ? p.startDate.toDate() : null;
+        const endDate = p.endDate?.toDate ? p.endDate.toDate() : null;
+        const notStarted = startDate && now < startDate;
+        const expired = endDate && now > endDate;
+        const maxQty = p.maxQty || 0, perUserLimit = p.perUserLimit || 0, sold = p.sold || 0, userCount = userCounts[d.id] || 0;
+        const globalOut = maxQty > 0 && (maxQty - sold) <= 0;
+        const userOut = perUserLimit > 0 && userCount >= perUserLimit;
+        const fullyOut = globalOut || userOut || notStarted || expired;
+        
+        let statusText = '';
+        if (notStarted) statusText = `⏳ Starts ${formatDate(p.startDate)}`;
+        else if (expired) statusText = `⏰ Ended ${formatDate(p.endDate)}`;
+        else if (globalOut) statusText = '🔒 Sold Out';
+        else if (userOut) statusText = '🔒 Limit Reached';
+        else statusText = '🟢 Available';
+        
+        grid.innerHTML += `<div class="plan-card featured ${fullyOut?'sold-out':''}">
+          <div class="plan-badge limited">⚡ Limited</div>
+          <div class="plan-icon-wrap diamond">${p.emoji||'🔥'}</div><div class="plan-name">${p.name}</div>
+          <div class="plan-details">
+            <div class="plan-detail-row"><span>Investment</span><span>${formatNaira(p.invest)}</span></div>
+            <div class="plan-detail-row"><span>Profit</span><span class="profit-val">+${formatNaira(p.profit)}</span></div>
+            <div class="plan-detail-row"><span>Duration</span><span>${p.days} Days</span></div>
+            <div class="plan-detail-row"><span>Total Return</span><span style="color:var(--success);">${formatNaira(p.total)}</span></div>
+          </div>
+          <div class="req-tags"><div class="req-tag ${fullyOut ? 'unmet' : 'info'}">${statusText}</div></div>
+          ${!fullyOut ? `<button class="invest-btn" onclick="openLimitedConfirmModal('${d.id}')">Invest ${formatNaira(p.invest)}</button>` : `<button class="invest-btn" disabled>${statusText}</button>`}
+        </div>`;
+      });
+    } catch (e) { /* silent */ }
+  }
+
+  window.openStandardConfirmModal = async function(planId) {
+    try {
+      const plans = await getStandardPlansWithOverrides();
+      const p = plans.find(x => x.id === planId);
+      if (!p) { showToast('error', 'Error', 'Plan not found.'); return; }
+      const userCount = await getUserPurchaseCount(String(planId), 'standard');
+      selectedPlanData = { id: planId, name: p.name, invest: p.invest, profit: p.profit, days: p.days, total: p.total, type: 'standard', maxQty: null, sold: 0, perUserLimit: 1, userCount, isVip: false };
+      showModal();
+    } catch (e) { showToast('error', 'Error', 'Failed to load plan.'); }
+  };
+
+  window.openLimitedConfirmModal = async function(planId) {
+    try {
+      const snap = await getDoc(doc(db, 'limitedPlans', String(planId)));
+      if (!snap.exists()) { showToast('error', 'Error', 'Plan unavailable.'); return; }
+      const d = snap.data();
+      const userCount = await getUserPurchaseCount(String(planId), 'limited');
+      selectedPlanData = { id: planId, name: d.name || 'Limited Plan', invest: Number(d.invest) || 0, profit: Number(d.profit) || 0, days: Number(d.days) || 0, total: Number(d.total) || 0, type: 'limited', maxQty: d.maxQty || null, sold: d.sold || 0, perUserLimit: d.perUserLimit || null, userCount, isVip: false };
+      showModal();
+    } catch (e) { showToast('error', 'Error', 'Failed to load plan.'); }
+  };
+
+  function showModal() {
+    if (!selectedPlanData) return;
+    const perUserInfo = selectedPlanData.perUserLimit ? `${selectedPlanData.userCount} of ${selectedPlanData.perUserLimit} used` : 'No limit';
+    let extraRows = '';
+    if (selectedPlanData.isVip) {
+      extraRows = `<div class="modal-info-row"><span>Weekly Salary</span><span style="color:var(--primary);">${formatNaira(selectedPlanData.weeklySalary)}/week (admin credited)</span></div>`;
+    }
+    document.getElementById('modalDetails').innerHTML = `
+      <div class="modal-info-row"><span>Plan</span><span>${selectedPlanData.name}</span></div>
+      <div class="modal-info-row"><span>Investment</span><span>${formatNaira(selectedPlanData.invest)}</span></div>
+      <div class="modal-info-row"><span>${selectedPlanData.isVip ? 'Net Gain' : 'Profit'}</span><span style="color:var(--success);">${formatNaira(selectedPlanData.profit)}</span></div>
+      <div class="modal-info-row"><span>Duration</span><span>${selectedPlanData.days} Day${selectedPlanData.days > 1 ? 's' : ''}</span></div>
+      <div class="modal-info-row"><span>Total Income</span><span style="color:var(--success);">${formatNaira(selectedPlanData.total)}</span></div>
+      ${selectedPlanData.isVip ? `<div class="modal-info-row"><span>Payout</span><span>Credited to Withdrawal Wallet after 1 day</span></div>` : ''}
+      ${extraRows}
+      <div class="modal-info-row"><span>Your Purchases</span><span style="color:var(--info);">${perUserInfo}</span></div>
+      <div class="modal-info-row"><span>Purchase</span><span style="color:var(--primary);">1 Slot</span></div>`;
+    document.getElementById('confirmModal').classList.add('show');
+  }
+
+  window.closeConfirmModal = function() { document.getElementById('confirmModal').classList.remove('show'); selectedPlanData = null; };
+
+  window.confirmInvestment = async function() {
+    if (!currentUser || !selectedPlanData) return;
+    const btn = document.getElementById('confirmBtn'), sp = document.getElementById('confirmSpinner'), tx = document.getElementById('confirmText');
+    btn.disabled = true; sp.style.display = 'block'; tx.textContent = 'Processing...';
+
+    const planName = selectedPlanData.name;
+    const planType = selectedPlanData.type;
+    const isVip = selectedPlanData.isVip;
+
+    try {
+      const userRef = doc(db, 'users', currentUser.uid), userSnap = await getDoc(userRef);
+      if (!userSnap.exists()) throw new Error('User not found');
+      const bal = Number(userSnap.data().depositWallet) || 0, amt = Number(selectedPlanData.invest);
+      
+      if (bal < amt) { showToast('error', 'Insufficient Balance', `Need ${formatNaira(amt)}.`); closeConfirmModal(); return; }
+
+      if (selectedPlanData.perUserLimit !== null && selectedPlanData.perUserLimit > 0) {
+        const uc = await getUserPurchaseCount(selectedPlanData.id, selectedPlanData.type);
+        if (uc >= selectedPlanData.perUserLimit) { showToast('error', 'Limit Reached', `Max ${selectedPlanData.perUserLimit} purchases.`); closeConfirmModal(); return; }
+      }
+
+      if (selectedPlanData.maxQty !== null && selectedPlanData.maxQty > 0) {
+        if ((selectedPlanData.maxQty - (selectedPlanData.sold || 0)) <= 0) { showToast('error', 'Sold Out', 'All global slots taken.'); closeConfirmModal(); return; }
+      }
+
+      if (selectedPlanData.type === 'limited' && selectedPlanData.maxQty !== null && selectedPlanData.maxQty > 0) {
+        await updateDoc(doc(db, 'limitedPlans', String(selectedPlanData.id)), { sold: increment(1) });
+      }
+
+      await updateDoc(userRef, { depositWallet: increment(-amt) });
+
+      const invRef = doc(collection(db, 'investments'));
+      await setDoc(invRef, {
+        uid: currentUser.uid,
+        planId: String(selectedPlanData.id),
+        planName: selectedPlanData.name,
+        planType: selectedPlanData.type,
+        amount: amt,
+        totalProfit: Number(selectedPlanData.profit),
+        totalReturn: Number(selectedPlanData.total),
+        totalDays: Number(selectedPlanData.days),
+        daysElapsed: 0,
+        quantity: 1,
+        status: 'active',
+        isVip: isVip,
+        weeklySalary: selectedPlanData.weeklySalary || 0,
+        createdAt: serverTimestamp(),
+        completedAt: null,
+        roiCredited: false
+      });
+
+      await updateDoc(userRef, { activeInvestments: increment(1) });
+
+      await addDoc(collection(db, 'transactions'), {
+        uid: currentUser.uid,
+        type: 'investment',
+        amount: amt,
+        planName: selectedPlanData.name,
+        status: 'completed',
+        createdAt: serverTimestamp(),
+        description: `Investment in ${selectedPlanData.name}`
+      });
+
+      await processReferralCommissions(currentUser.uid, amt, selectedPlanData.name);
+
+      closeConfirmModal();
+      showToast('success', 'Investment Successful! 🎉', `Invested ${formatNaira(amt)} in ${planName}. ${isVip ? 'Total Income will be credited to your Withdrawal Wallet after 1 day. Weekly salary is admin-managed.' : ''}`);
+      updateHeaderBalance();
+
+      document.querySelectorAll('.tab-pill').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+      document.querySelectorAll('.tab-pill')[3].classList.add('active');
+      document.getElementById('tab-myInvestments').classList.add('active');
+      loadMyInvestments();
+
+      if (planType === 'standard') renderPlans();
+      else if (planType === 'limited') loadLimitedPlans();
+      else if (planType === 'vip') renderVipPlans();
+    } catch (e) {
+      console.error(e);
+      showToast('error', 'Failed', e.message || 'Something went wrong.');
+    } finally {
+      btn.disabled = false; sp.style.display = 'none'; tx.textContent = 'Confirm (1 Slot)';
+    }
+  };
+
+  async function processReferralCommissions(uid, amt, planName) {
+    try {
+      const us = await getDoc(doc(db, 'users', uid)); if (!us.exists()) return;
+      const refBy = us.data().referredBy; if (!refBy) return;
+      const l1Snap = await getDoc(doc(db, 'users', refBy));
+      if (l1Snap.exists()) {
+        const l1Com = Math.round(amt * 0.10);
+        await updateDoc(doc(db, 'users', refBy), { withdrawalWallet: increment(l1Com), referralEarnings: increment(l1Com) });
+        await addDoc(collection(db, 'notifications'), { uid: refBy, title: '💰 Referral Bonus!', message: `Downline invested ${formatNaira(amt)} in ${planName}. Earned ${formatNaira(l1Com)} (L1-10%).`, type: 'referral_commission', amount: l1Com, level: 1, read: false, createdAt: serverTimestamp() });
+        const l2Uid = l1Snap.data().referredBy;
+        if (l2Uid) {
+          const l2Snap = await getDoc(doc(db, 'users', l2Uid));
+          if (l2Snap.exists()) {
+            const l2Com = Math.round(amt * 0.02);
+            await updateDoc(doc(db, 'users', l2Uid), { withdrawalWallet: increment(l2Com), referralEarnings: increment(l2Com) });
+            await addDoc(collection(db, 'notifications'), { uid: l2Uid, title: '💰 Referral Bonus!', message: `L2 downline invested ${formatNaira(amt)}. Earned ${formatNaira(l2Com)} (L2-2%).`, type: 'referral_commission', amount: l2Com, level: 2, read: false, createdAt: serverTimestamp() });
+            const l3Uid = l2Snap.data().referredBy;
+            if (l3Uid) {
+              const l3Snap = await getDoc(doc(db, 'users', l3Uid));
+              if (l3Snap.exists()) {
+                const l3Com = Math.round(amt * 0.01);
+                await updateDoc(doc(db, 'users', l3Uid), { withdrawalWallet: increment(l3Com), referralEarnings: increment(l3Com) });
+                await addDoc(collection(db, 'notifications'), { uid: l3Uid, title: '💰 Referral Bonus!', message: `L3 downline invested ${formatNaira(amt)}. Earned ${formatNaira(l3Com)} (L3-1%).`, type: 'referral_commission', amount: l3Com, level: 3, read: false, createdAt: serverTimestamp() });
+              }
+            }
+          }
+        }
+      }
+    } catch (e) { console.error('Referral commission error:', e); }
+  }
+
+  async function loadMyInvestments() {
+    if (!currentUser) return;
+    const list = document.getElementById('myInvestmentsList');
+    try {
+      const q = query(collection(db, 'investments'), where('uid', '==', currentUser.uid), orderBy('createdAt', 'desc'));
+      const snap = await getDocs(q);
+      if (snap.empty) { list.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📋</div><h3>No Investments</h3><p>Start investing!</p></div>'; return; }
+      list.innerHTML = '';
+      snap.forEach(d => {
+        const inv = d.data();
+        const td = Number(inv.totalDays) || 0;
+        const de = Number(inv.daysElapsed) || 0;
+        const prog = td > 0 ? Math.min((de / td) * 100, 100) : 0;
+        const rem = Math.max(td - de, 0);
+        const done = inv.status === 'completed';
+        const created = inv.createdAt?.toDate ? inv.createdAt.toDate() : new Date(inv.createdAt || Date.now());
+        const maturityDate = new Date(created);
+        maturityDate.setDate(maturityDate.getDate() + td);
+        const isVip = inv.isVip === true;
+        const iconMap = { standard: '📊', limited: '⚡', vip: '👑' };
+        const iconClassMap = { standard: 'standard', limited: 'limited', vip: 'vip' };
+        
+        list.innerHTML += `<div class="inv-card">
+          <div class="inv-card-top">
+            <div class="inv-card-plan">
+              <div class="inv-card-icon ${iconClassMap[inv.planType] || 'standard'}">${iconMap[inv.planType] || '📊'}</div>
+              <div>
+                <div class="inv-card-name">${inv.planName || 'Investment'}</div>
+                <div class="inv-card-type">${inv.planType || 'standard'} ${isVip ? 'VIP' : ''} Plan</div>
+              </div>
+            </div>
+            <span class="inv-status-badge ${inv.status || 'active'}">${inv.status || 'active'}</span>
+          </div>
+          <div class="inv-progress-wrap">
+            <div class="inv-progress-header"><span>Progress</span><span>${Math.round(prog)}%</span></div>
+            <div class="inv-progress-bar"><div class="inv-progress-fill" style="width:${prog}%"></div></div>
+          </div>
+          <div class="inv-detail-grid">
+            <div class="inv-detail-cell"><div class="inv-detail-val">${formatNaira(inv.amount)}</div><div class="inv-detail-lbl">Invested</div></div>
+            <div class="inv-detail-cell"><div class="inv-detail-val profit">+${formatNaira(inv.totalProfit||0)}</div><div class="inv-detail-lbl">${isVip ? 'Net Gain' : 'Profit'}</div></div>
+            <div class="inv-detail-cell"><div class="inv-detail-val">${formatNaira(inv.totalReturn||0)}</div><div class="inv-detail-lbl">Total Income</div></div>
+          </div>
+          <div class="inv-detail-grid">
+            <div class="inv-detail-cell"><div class="inv-detail-val">${td}d</div><div class="inv-detail-lbl">Duration</div></div>
+            <div class="inv-detail-cell"><div class="inv-detail-val" style="color:${done ? 'var(--success)' : 'var(--primary)'};">${done ? 'Completed ✓' : rem + 'd left'}</div><div class="inv-detail-lbl">Remaining</div></div>
+            ${isVip ? `<div class="inv-detail-cell"><div class="inv-detail-val" style="color:var(--primary);">Admin</div><div class="inv-detail-lbl">Salary</div></div>` : ''}
+          </div>
+          <div class="inv-card-footer">
+            <span>Maturity: <span class="inv-maturity-date">${formatDate(maturityDate)}</span></span>
+            <span>ID: ${String(inv.planId||'').substring(0,8)}</span>
+          </div>
+        </div>`;
+      });
+    } catch (e) { console.error(e); }
+  }
+
+  async function updateHeaderBalance() {
+    if (!currentUser) return;
+    try {
+      const s = await getDoc(doc(db, 'users', currentUser.uid));
+      if (s.exists()) {
+        const bal = s.data().depositWallet || 0;
+        document.getElementById('headerBalance').innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg> ${formatNaira(bal)}`;
+      }
+    } catch (e) {}
+  }
+
+  // ============ ROI CREDITING (AUTOMATIC - ON PAGE LOAD ONLY) ============
+  async function creditRoiOnly() {
+    if (!currentUser) return;
+    try {
+      const q = query(collection(db, 'investments'), where('uid', '==', currentUser.uid), where('status', '==', 'active'), where('roiCredited', '==', false));
+      const snap = await getDocs(q);
+      const now = new Date();
+      
+      for (const d of snap.docs) {
+        const inv = d.data();
+        const created = inv.createdAt?.toDate ? inv.createdAt.toDate() : new Date(inv.createdAt || Date.now());
+        const maturityDate = new Date(created);
+        maturityDate.setDate(maturityDate.getDate() + (Number(inv.totalDays) || 1));
+        
+        if (now >= maturityDate) {
+          const payout = Number(inv.totalReturn) || (Number(inv.amount) + Number(inv.totalProfit));
+          
+          await updateDoc(doc(db, 'users', currentUser.uid), {
+            withdrawalWallet: increment(payout),
+            totalEarnings: increment(Number(inv.totalProfit) || 0),
+            activeInvestments: increment(-1)
+          });
+          
+          await updateDoc(doc(db, 'investments', d.id), {
+            status: 'completed',
+            roiCredited: true,
+            completedAt: serverTimestamp()
+          });
+          
+          await addDoc(collection(db, 'transactions'), {
+            uid: currentUser.uid,
+            type: 'investment_return',
+            amount: payout,
+            planName: inv.planName,
+            status: 'completed',
+            createdAt: serverTimestamp(),
+            description: `${inv.isVip ? 'VIP' : 'Investment'} Return: ${inv.planName}`
+          });
+          
+          await addDoc(collection(db, 'notifications'), {
+            uid: currentUser.uid,
+            title: '🎉 Investment Matured!',
+            message: `${inv.planName} returned ${formatNaira(payout)} to your Withdrawal Wallet.`,
+            type: 'investment_return',
+            read: false,
+            createdAt: serverTimestamp()
+          });
+          
+          showToast('success', 'Investment Matured! 🎉', `${inv.planName} returned ${formatNaira(payout)}.`);
+        }
+      }
+    } catch (e) { console.error('ROI error:', e); }
+  }
+
+  // ============ AUTH STATE (NO INTERVAL - PAGE LOAD ONLY) ============
+  onAuthStateChanged(auth, (u) => {
+    if (u) {
+      currentUser = u;
+      renderPlans();
+      updateHeaderBalance();
+      creditRoiOnly(); // Only credits matured investments (Total Income after 1 day)
+    } else window.location.href = 'login.html';
+  });
+</script>
+</body>
+</html>
