@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
+  <title>Evonance – Withdraw</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Playfair+Display:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #f5f3ff; --surface: #ffffff; --elevated: #faf9ff; --elevated-hover: #f3efff;
+      --primary: #7c3aed; --primary-glow: #a78bfa; --primary-shine: #8b5cf6;
+      --primary-muted: rgba(124,58,237,0.08);
+      --gold: #f0b90b;
+      --text: #1e1b2e; --text-secondary: #4c4760; --text-muted: #8a849c;
+      --border-subtle: rgba(124,58,237,0.08); --border-soft: rgba(124,58,237,0.15);
+      --border-glow: rgba(124,58,237,0.35); --success: #10b981; --error: #ef4444;
+      --warning: #f59e0b; --info: #3b82f6;
+      --radius-sm: 10px; --radius-md: 16px; --radius-lg: 22px; --radius-xl: 28px;
+      --shadow-elevated: 0 2px 4px rgba(124,58,237,0.04), 0 8px 32px rgba(124,58,237,0.08);
+      --shadow-btn: 0 4px 20px rgba(124,58,237,0.3);
+    }
+
+    body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); min-height: 100vh; color: var(--text); padding-bottom: 90px; position: relative; }
+    #ambientCanvas { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
+
+    .toast { position: fixed; top: 20px; left: 20px; background: var(--surface); border: 1px solid var(--border-soft); border-radius: 16px; padding: 16px 24px; display: flex; align-items: center; gap: 12px; z-index: 1000; transform: translateX(-120%); transition: transform 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55); box-shadow: 0 20px 40px rgba(124,58,237,0.2); max-width: 400px; }
+    .toast.show { transform: translateX(0); }
+    .toast.success { border-left: 4px solid var(--success); }
+    .toast.error { border-left: 4px solid var(--error); }
+    .toast.info { border-left: 4px solid var(--info); }
+    .toast.warning { border-left: 4px solid var(--warning); }
+    .toast-icon { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .toast.success .toast-icon { background: rgba(16, 185, 129, 0.12); }
+    .toast.error .toast-icon { background: rgba(239, 68, 68, 0.12); }
+    .toast.info .toast-icon { background: rgba(59, 130, 246, 0.12); }
+    .toast.warning .toast-icon { background: rgba(245, 158, 11, 0.12); }
+    .toast-icon svg { width: 24px; height: 24px; }
+    .toast.success .toast-icon svg { color: var(--success); }
+    .toast.error .toast-icon svg { color: var(--error); }
+    .toast.info .toast-icon svg { color: var(--info); }
+    .toast.warning .toast-icon svg { color: var(--warning); }
+    .toast-content h4 { font-size: 0.95rem; font-weight: 700; color: var(--text); margin-bottom: 2px; }
+    .toast-content p { font-size: 0.8rem; color: var(--text-secondary); line-height: 1.3; }
+
+    .header { background: rgba(255,255,255,0.9); backdrop-filter: blur(24px); border-bottom: 1px solid var(--border-subtle); padding: 16px 20px; position: sticky; top: 0; z-index: 100; }
+    .header-content { display: flex; align-items: center; justify-content: space-between; max-width: 800px; margin: 0 auto; }
+    .header-left { display: flex; align-items: center; gap: 12px; }
+    .back-btn { background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 8px; border-radius: 10px; display: flex; transition: all 0.2s; text-decoration: none; }
+    .back-btn:hover { background: var(--elevated-hover); color: var(--text); }
+    .back-btn svg { width: 24px; height: 24px; }
+    .header-title { font-family: 'Playfair Display', serif; font-size: 1.3rem; font-weight: 700; letter-spacing: -0.5px; }
+    .balance-badge { background: var(--primary-muted); border: 1px solid rgba(124,58,237,0.2); border-radius: 50px; padding: 6px 14px; font-size: 0.8rem; font-weight: 700; color: var(--primary); }
+
+    .main-content { max-width: 600px; margin: 0 auto; padding: 20px; display: flex; flex-direction: column; gap: 16px; }
+
+    .status-banner { border-radius: 16px; padding: 16px 20px; display: flex; align-items: center; gap: 12px; font-weight: 600; box-shadow: var(--shadow-elevated); }
+    .status-banner.open { background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); color: var(--success); }
+    .status-banner.closed { background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.25); color: var(--error); }
+    .status-banner svg { width: 24px; height: 24px; flex-shrink: 0; }
+    .status-banner-content h4 { font-size: 0.9rem; margin-bottom: 2px; }
+    .status-banner-content p { font-size: 0.75rem; opacity: 0.8; font-weight: 400; }
+
+    .requirements-card { background: var(--surface); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); padding: 16px; box-shadow: var(--shadow-elevated); }
+    .requirement-item { display: flex; align-items: center; gap: 10px; padding: 8px 0; font-size: 0.82rem; }
+    .requirement-item:not(:last-child) { border-bottom: 1px solid var(--border-subtle); }
+    .requirement-icon { width: 28px; height: 28px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; flex-shrink: 0; }
+    .requirement-icon.met { background: rgba(16, 185, 129, 0.12); }
+    .requirement-icon.unmet { background: rgba(239, 68, 68, 0.12); }
+    .requirement-text { flex: 1; }
+    .requirement-status { font-weight: 700; font-size: 0.75rem; }
+    .requirement-status.met { color: var(--success); }
+    .requirement-status.unmet { color: var(--error); }
+
+    .info-row { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+    .info-card { background: var(--surface); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); padding: 14px; text-align: center; box-shadow: var(--shadow-elevated); }
+    .info-card .info-value { font-size: 1rem; font-weight: 700; color: var(--text); margin-bottom: 2px; }
+    .info-card .info-label { font-size: 0.68rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+
+    .form-card { background: var(--surface); border: 1px solid var(--border-subtle); border-radius: var(--radius-xl); padding: 24px; box-shadow: var(--shadow-elevated); }
+    .form-card h3 { font-family: 'Playfair Display', serif; font-size: 1.1rem; font-weight: 700; margin-bottom: 20px; display: flex; align-items: center; gap: 8px; }
+    .form-card h3 svg { width: 22px; height: 22px; color: var(--primary); }
+
+    .form-group { margin-bottom: 16px; }
+    .form-label { display: block; font-size: 0.7rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1.2px; margin-bottom: 6px; }
+    .form-input { width: 100%; height: 50px; background: var(--elevated); border: 1.5px solid var(--border-soft); border-radius: var(--radius-md); padding: 0 16px; font-family: inherit; font-size: 0.9rem; color: var(--text); outline: none; transition: all 0.3s; }
+    .form-input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(124,58,237,0.06); background: #ffffff; }
+    .form-input.error { border-color: var(--error); }
+    .form-input:disabled { opacity: 0.5; cursor: not-allowed; }
+    .form-input::placeholder { color: var(--text-muted); }
+
+    select.form-input { appearance: none; cursor: pointer; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%238a849c' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 16px center; padding-right: 40px; }
+
+    .account-name-box { display: none; align-items: center; gap: 8px; background: rgba(124,58,237,0.06); border: 1px solid rgba(124,58,237,0.2); border-radius: 12px; padding: 12px 14px; font-size: 0.85rem; font-weight: 700; color: var(--primary); margin-top: 8px; }
+    .account-name-box.show { display: flex; }
+    .account-name-box.checking { color: var(--text-muted); background: var(--elevated); border-color: var(--border-soft); font-weight: 500; }
+    .account-name-box.failed { color: var(--error); background: rgba(239,68,68,0.06); border-color: rgba(239,68,68,0.2); font-weight: 500; }
+
+    .pin-inputs { display: flex; gap: 10px; justify-content: center; }
+    .pin-input { width: 55px; height: 60px; background: var(--elevated); border: 2px solid var(--border-soft); border-radius: 14px; text-align: center; font-family: 'JetBrains Mono', monospace; font-size: 1.5rem; font-weight: 700; color: var(--text); outline: none; transition: all 0.3s; }
+    .pin-input:focus { border-color: var(--primary); box-shadow: 0 0 0 4px rgba(124,58,237,0.06); }
+    .pin-input:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .error-message { font-size: 0.75rem; color: var(--error); margin-top: 4px; display: none; }
+    .error-message.show { display: block; }
+
+    .summary-box { background: var(--elevated); border: 1px solid var(--border-soft); border-radius: var(--radius-md); padding: 16px; margin-top: 20px; }
+    .summary-row { display: flex; justify-content: space-between; padding: 8px 0; font-size: 0.85rem; border-bottom: 1px solid var(--border-subtle); }
+    .summary-row:last-child { border-bottom: none; }
+    .summary-row span:first-child { color: var(--text-muted); }
+    .summary-row span:last-child { font-weight: 600; }
+    .summary-row .fee { color: var(--error); }
+    .summary-row .net { color: var(--success); font-size: 1rem; }
+
+    .submit-btn { width: 100%; height: 52px; background: linear-gradient(135deg, var(--primary-shine), var(--primary), #6d28d9); color: #fff; font-family: inherit; font-size: 1rem; font-weight: 700; border: none; border-radius: 50px; cursor: pointer; margin-top: 20px; transition: all 0.3s; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: var(--shadow-btn); }
+    .submit-btn:hover:not(:disabled) { box-shadow: 0 10px 30px rgba(124,58,237,0.4); transform: translateY(-2px); }
+    .submit-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .spinner { width: 20px; height: 20px; border: 2.5px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; animation: spin 0.6s linear infinite; display: none; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .pin-setup-card { background: var(--surface); border: 1px solid var(--border-subtle); border-radius: var(--radius-xl); padding: 32px 24px; text-align: center; box-shadow: var(--shadow-elevated); }
+    .pin-setup-card .pin-icon { width: 64px; height: 64px; background: var(--primary-muted); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; font-size: 2rem; }
+    .pin-setup-card h3 { font-family: 'Playfair Display', serif; font-size: 1.2rem; margin-bottom: 8px; }
+    .pin-setup-card p { font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 24px; }
+
+    .bottom-nav { position: fixed; bottom: 12px; left: 50%; transform: translateX(-50%); z-index: 100; background: var(--surface); border: 1px solid var(--border-soft); border-radius: 50px; display: flex; align-items: center; padding: 6px 8px; gap: 2px; box-shadow: 0 8px 40px rgba(124,58,237,0.2); backdrop-filter: blur(20px); }
+    .nav-item { display: flex; align-items: center; gap: 6px; padding: 10px 16px; border-radius: 50px; text-decoration: none; color: var(--text-muted); font-size: 0.7rem; font-weight: 600; transition: all 0.3s; white-space: nowrap; }
+    .nav-item.active { background: var(--primary); color: #fff; box-shadow: 0 4px 16px rgba(124,58,237,0.3); }
+    .nav-item:hover:not(.active) { color: var(--text); background: var(--elevated); }
+    .nav-item svg { width: 18px; height: 18px; }
+
+    @media (max-width: 480px) {
+      .main-content { padding: 16px; gap: 14px; }
+      .info-row { grid-template-columns: 1fr 1fr; }
+      .pin-input { width: 48px; height: 52px; font-size: 1.3rem; }
+      .bottom-nav { bottom: 6px; padding: 4px 6px; }
+      .nav-item { padding: 8px 10px; font-size: 0.6rem; gap: 3px; }
+      .nav-item svg { width: 15px; height: 15px; }
+    }
+  </style>
+</head>
+<body>
+
+<canvas id="ambientCanvas"></canvas>
+
+<div class="toast success" id="toast">
+  <div class="toast-icon">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+  </div>
+  <div class="toast-content">
+    <h4 id="toastTitle">Success</h4>
+    <p id="toastMessage">Action completed.</p>
+  </div>
+</div>
+
+<header class="header">
+  <div class="header-content">
+    <div class="header-left">
+      <a href="dashboard.html" class="back-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+      </a>
+      <span class="header-title">Withdraw Funds</span>
+    </div>
+    <div class="balance-badge" id="headerBalance">₦0.00</div>
+  </div>
+</header>
+
+<main class="main-content">
+
+  <div class="status-banner open" id="statusBanner">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+    <div class="status-banner-content">
+      <h4 id="statusTitle">Withdrawals Open</h4>
+      <p id="statusMessage">8:00 AM - 5:00 PM (Mon-Sat)</p>
+    </div>
+  </div>
+
+  <div class="requirements-card">
+    <div class="requirement-item">
+      <div class="requirement-icon met" id="reqTimeIcon">✅</div>
+      <span class="requirement-text">Within withdrawal hours (8AM-5PM, Mon-Sat)</span>
+      <span class="requirement-status met" id="reqTimeStatus">OK</span>
+    </div>
+    <div class="requirement-item">
+      <div class="requirement-icon met" id="reqDailyIcon">✅</div>
+      <span class="requirement-text">Not withdrawn today (once per day)</span>
+      <span class="requirement-status met" id="reqDailyStatus">OK</span>
+    </div>
+    <div class="requirement-item">
+      <div class="requirement-icon unmet" id="reqInvestmentIcon">❌</div>
+      <span class="requirement-text">Must have made at least 1 investment before (active or completed)</span>
+      <span class="requirement-status unmet" id="reqInvestmentStatus">Required</span>
+    </div>
+    <div class="requirement-item">
+      <div class="requirement-icon met" id="reqPinIcon">✅</div>
+      <span class="requirement-text">Withdrawal PIN is set</span>
+      <span class="requirement-status met" id="reqPinStatus">OK</span>
+    </div>
+    <div class="requirement-item">
+      <div class="requirement-icon met" id="reqBalanceIcon">✅</div>
+      <span class="requirement-text">Minimum ₦3,000 in Withdrawal Wallet</span>
+      <span class="requirement-status met" id="reqBalanceStatus">OK</span>
+    </div>
+  </div>
+
+  <div class="info-row">
+    <div class="info-card"><div class="info-value">₦3,000</div><div class="info-label">Minimum</div></div>
+    <div class="info-card"><div class="info-value">8%</div><div class="info-label">Fee</div></div>
+    <div class="info-card"><div class="info-value">1/Day</div><div class="info-label">Frequency</div></div>
+    <div class="info-card"><div class="info-value">Mon-Sat</div><div class="info-label">Available</div></div>
+  </div>
+
+  <div class="pin-setup-card" id="pinSetupCard" style="display:none;">
+    <div class="pin-icon">🔐</div>
+    <h3>Set Up Withdrawal PIN</h3>
+    <p>Create a 4-digit PIN to secure your withdrawals. You'll need this PIN for every withdrawal.</p>
+    <div class="pin-inputs" style="margin-bottom: 16px;">
+      <input type="password" class="pin-input" id="pin1" maxlength="1" oninput="handlePinInput(this, 'pin2')" />
+      <input type="password" class="pin-input" id="pin2" maxlength="1" oninput="handlePinInput(this, 'pin3')" />
+      <input type="password" class="pin-input" id="pin3" maxlength="1" oninput="handlePinInput(this, 'pin4')" />
+      <input type="password" class="pin-input" id="pin4" maxlength="1" />
+    </div>
+    <p style="font-size:0.75rem;color:var(--text-muted);margin-bottom:16px;">Confirm PIN</p>
+    <div class="pin-inputs" style="margin-bottom: 16px;">
+      <input type="password" class="pin-input" id="confirmPin1" maxlength="1" oninput="handlePinInput(this, 'confirmPin2')" />
+      <input type="password" class="pin-input" id="confirmPin2" maxlength="1" oninput="handlePinInput(this, 'confirmPin3')" />
+      <input type="password" class="pin-input" id="confirmPin3" maxlength="1" oninput="handlePinInput(this, 'confirmPin4')" />
+      <input type="password" class="pin-input" id="confirmPin4" maxlength="1" />
+    </div>
+    <button class="submit-btn" onclick="setupPin()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="20" height="20"><polyline points="20 6 9 17 4 12"/></svg>
+      Set PIN
+    </button>
+  </div>
+
+  <div id="withdrawFormCardWrapper">
+    <div class="form-card" id="withdrawFormCard">
+      <h3>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="12" y1="10" x2="12" y2="18"/><polyline points="9 15 12 18 15 15"/></svg>
+        Withdrawal Form
+      </h3>
+
+      <div class="form-group">
+        <label class="form-label">Available Balance</label>
+        <div style="font-size:1.4rem;font-weight:800;color:var(--primary);" id="availableBalance">₦0.00</div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Amount to Withdraw (₦)</label>
+        <input type="number" class="form-input" id="amount" placeholder="Enter amount" oninput="calculateFee()" />
+        <div class="error-message" id="amountError"></div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Select Bank</label>
+        <select class="form-input" id="bankName" onchange="onBankOrAccountChange()">
+          <option value="">-- Loading banks... --</option>
+        </select>
+        <div class="error-message" id="bankError"></div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Account Number</label>
+        <input type="text" class="form-input" id="accountNumber" placeholder="Enter 10-digit account number" maxlength="10" inputmode="numeric" oninput="onBankOrAccountChange()" />
+        <div class="error-message" id="accountError"></div>
+        <div class="account-name-box" id="accountNameBox"></div>
+      </div>
+
+      <input type="hidden" id="accountName" />
+
+      <div class="form-group">
+        <label class="form-label">Enter 4-Digit PIN</label>
+        <div class="pin-inputs">
+          <input type="password" class="pin-input" id="wPin1" maxlength="1" oninput="handlePinInput(this, 'wPin2')" />
+          <input type="password" class="pin-input" id="wPin2" maxlength="1" oninput="handlePinInput(this, 'wPin3')" />
+          <input type="password" class="pin-input" id="wPin3" maxlength="1" oninput="handlePinInput(this, 'wPin4')" />
+          <input type="password" class="pin-input" id="wPin4" maxlength="1" />
+        </div>
+        <div class="error-message" id="pinError"></div>
+      </div>
+
+      <div class="summary-box" id="summaryBox" style="display:none;">
+        <div class="summary-row"><span>Amount</span><span id="summaryAmount">₦0.00</span></div>
+        <div class="summary-row"><span>Fee (8%)</span><span class="fee" id="summaryFee">-₦0.00</span></div>
+        <div class="summary-row"><span>You'll Receive</span><span class="net" id="summaryNet">₦0.00</span></div>
+        <div class="summary-row"><span>Bank</span><span id="summaryBank">--</span></div>
+        <div class="summary-row"><span>Account</span><span id="summaryAccount">--</span></div>
+      </div>
+
+      <button class="submit-btn" id="submitBtn" onclick="submitWithdrawal()">
+        <div class="spinner" id="spinner"></div>
+        <span id="btnText">Submit Withdrawal Request</span>
+      </button>
+    </div>
+  </div>
+
+</main>
+
+<nav class="bottom-nav">
+  <a href="dashboard.html" class="nav-item">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
+    Home
+  </a>
+  <a href="deposit.html" class="nav-item">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+    Deposit
+  </a>
+  <a href="withdraw.html" class="nav-item active">
+    <svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="12" y1="10" x2="12" y2="18"/><polyline points="9 15 12 18 15 15"/></svg>
+    Withdraw
+  </a>
+  <a href="investments.html" class="nav-item">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+    Invest
+  </a>
+  <a href="profile.html" class="nav-item">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+    Profile
+  </a>
+</nav>
+
+<script>
+  (function(){
+    const c=document.getElementById('ambientCanvas'),ctx=c.getContext('2d');
+    let w,h,pts=[];
+    function resize(){w=c.width=window.innerWidth;h=c.height=window.innerHeight;}
+    resize();window.addEventListener('resize',resize);
+    class Pt{
+      constructor(){this.reset();}
+      reset(){this.x=Math.random()*w;this.y=Math.random()*h;this.s=Math.random()*1.2+0.4;this.sx=(Math.random()-0.5)*0.2;this.sy=(Math.random()-0.5)*0.2;this.o=Math.random()*0.3+0.06;this.ps=Math.random()*0.015+0.004;this.po=Math.random()*Math.PI*2;this.h=Math.random()<0.7?270:(Math.random()<0.5?45:220);}
+      update(){this.x+=this.sx;this.y+=this.sy;if(this.x<-10)this.x=w+10;if(this.x>w+10)this.x=-10;if(this.y<-10)this.y=h+10;if(this.y>h+10)this.y=-10;}
+      draw(){const p=Math.sin(Date.now()*this.ps+this.po)*0.3+0.7,a=this.o*p;ctx.beginPath();ctx.arc(this.x,this.y,this.s,0,Math.PI*2);ctx.fillStyle=`hsla(${this.h},70%,55%,${a})`;ctx.fill();}
+    }
+    for(let i=0;i<55;i++)pts.push(new Pt());
+    function anim(){ctx.clearRect(0,0,w,h);pts.forEach(p=>{p.update();p.draw();});
+      for(let i=0;i<pts.length;i++){for(let j=i+1;j<pts.length;j++){const dx=pts[i].x-pts[j].x,dy=pts[i].y-pts[j].y,d=Math.sqrt(dx*dx+dy*dy);if(d<100){ctx.beginPath();ctx.moveTo(pts[i].x,pts[i].y);ctx.lineTo(pts[j].x,pts[j].y);ctx.strokeStyle=`rgba(124,58,237,${0.03*(1-d/100)})`;ctx.lineWidth=0.35;ctx.stroke();}}}
+      requestAnimationFrame(anim);}
+    anim();
+  })();
+</script>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+  import { getFirestore, doc, getDoc, updateDoc, collection, query, where, orderBy, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+  const firebaseConfig = { apiKey: "AIzaSyDT0ACobk5YMFgrqxb-VOnfELXTyssrOtA", authDomain: "newpro-d830e.firebaseapp.com", projectId: "newpro-d830e", storageBucket: "newpro-d830e.firebasestorage.app", messagingSenderId: "642315724384", appId: "1:642315724384:web:19def936898718e9300505" };
+  const app = initializeApp(firebaseConfig); const auth = getAuth(app); const db = getFirestore(app);
+
+  let currentUser = null;
+  let userWithdrawalPin = null;
+  let canWithdraw = false;
+  let hasWithdrawnToday = false;
+  let hasEverInvested = false; // RENAMED: checks if user has EVER invested (active OR completed)
+  let allRequirementsMet = false;
+  let bankList = [];
+  let resolvedAccountName = null;
+  let resolveDebounceTimer = null;
+
+  function showToast(type, title, message, duration = 4000) {
+    const toast = document.getElementById('toast');
+    toast.className = 'toast ' + type;
+    document.getElementById('toastTitle').textContent = title;
+    document.getElementById('toastMessage').textContent = message;
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), duration);
+  }
+
+  function formatNaira(amount) { return '₦' + Number(amount).toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+
+  window.handlePinInput = function(current, nextId) { if (current.value.length === 1 && nextId) document.getElementById(nextId)?.focus(); };
+
+  async function loadBanks() {
+    const select = document.getElementById('bankName');
+    try {
+      const res = await fetch('/api/flw-banks');
+      const data = await res.json();
+      if (!res.ok || !data.banks) throw new Error(data.error || 'Could not load bank list');
+      bankList = data.banks;
+      select.innerHTML = '<option value="">-- Select Bank --</option>' + bankList.slice().sort((a, b) => a.name.localeCompare(b.name)).map(b => `<option value="${b.code}">${b.name}</option>`).join('');
+    } catch (e) {
+      console.error('Load banks error:', e);
+      select.innerHTML = '<option value="">-- Could not load banks, please retry --</option>';
+      showToast('error', 'Bank List Unavailable', e.message || 'Could not load bank list.');
+    }
+  }
+
+  window.calculateFee = function() {
+    const amount = parseFloat(document.getElementById('amount').value) || 0;
+    const fee = amount * 0.08;
+    const net = amount - fee;
+    if (amount > 0) {
+      document.getElementById('summaryBox').style.display = 'block';
+      document.getElementById('summaryAmount').textContent = formatNaira(amount);
+      document.getElementById('summaryFee').textContent = '- ' + formatNaira(fee);
+      document.getElementById('summaryNet').textContent = formatNaira(net);
+    } else {
+      document.getElementById('summaryBox').style.display = 'none';
+    }
+  };
+
+  window.onBankOrAccountChange = function() {
+    const bankCode = document.getElementById('bankName').value;
+    const accNum = document.getElementById('accountNumber').value.trim();
+    document.getElementById('summaryBank').textContent = document.getElementById('bankName').selectedOptions[0]?.textContent || '--';
+    document.getElementById('summaryAccount').textContent = accNum ? '****' + accNum.slice(-4) : '--';
+    calculateFee();
+    const box = document.getElementById('accountNameBox');
+    resolvedAccountName = null;
+    document.getElementById('accountName').value = '';
+    if (!bankCode || !/^\d{10}$/.test(accNum)) { box.className = 'account-name-box'; box.textContent = ''; return; }
+    clearTimeout(resolveDebounceTimer);
+    box.className = 'account-name-box checking show';
+    box.textContent = 'Checking account name...';
+    resolveDebounceTimer = setTimeout(async () => {
+      try {
+        const res = await fetch('/api/flw-resolve-account', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ account_number: accNum, account_bank: bankCode }) });
+        const data = await res.json();
+        if (!res.ok || !data.account_name) throw new Error(data.error || 'Could not verify account');
+        resolvedAccountName = data.account_name;
+        document.getElementById('accountName').value = data.account_name;
+        box.className = 'account-name-box show';
+        box.textContent = '✅ ' + data.account_name;
+      } catch (e) {
+        box.className = 'account-name-box failed show';
+        box.textContent = '⚠️ ' + (e.message || 'Could not verify this account.');
+      }
+    }, 600);
+  };
+
+  function checkWithdrawalWindow() {
+    const now = new Date();
+    const day = now.getDay();
+    const hours = now.getHours();
+    const minutes = now.getMinutes();
+    const currentTime = hours * 60 + minutes;
+    const banner = document.getElementById('statusBanner');
+    const title = document.getElementById('statusTitle');
+    const message = document.getElementById('statusMessage');
+    if (day === 0) {
+      canWithdraw = false;
+      banner.className = 'status-banner closed';
+      title.textContent = 'Withdrawals Closed';
+      message.textContent = 'No withdrawals on Sundays. Available Mon-Sat 8AM-5PM.';
+      banner.querySelector('svg').outerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>';
+    } else if (currentTime < 480 || currentTime >= 1020) {
+      canWithdraw = false;
+      banner.className = 'status-banner closed';
+      title.textContent = 'Withdrawals Closed';
+      message.textContent = 'Withdrawal hours are 8:00 AM - 5:00 PM.';
+      banner.querySelector('svg').outerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>';
+    } else {
+      canWithdraw = true;
+      banner.className = 'status-banner open';
+      title.textContent = 'Withdrawals Open';
+      message.textContent = '8:00 AM - 5:00 PM (Mon-Sat). Fee: 8%. Once per day.';
+      banner.querySelector('svg').outerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>';
+    }
+    updateRequirementsUI();
+    updateSubmitButton();
+  }
+
+  // ===== FIXED: Checks if user has EVER invested (ANY status) =====
+  // This allows users with COMPLETED or EXPIRED investments to withdraw
+  async function checkEverInvested(uid) {
+    try {
+      // Query ALL investments for this user — NO status filter
+      // This returns active, completed, expired — EVERYTHING
+      const invQuery = query(collection(db, 'investments'), where('uid', '==', uid));
+      const snapshot = await getDocs(invQuery);
+      
+      // If ANY investment exists, user can withdraw
+      hasEverInvested = !snapshot.empty;
+      
+      console.log('Investment history check:', { uid, investmentCount: snapshot.size, hasEverInvested });
+      
+      updateRequirementsUI();
+      updateSubmitButton();
+    } catch (error) {
+      console.error('Error checking investment history:', error);
+      hasEverInvested = false;
+      updateRequirementsUI();
+      updateSubmitButton();
+    }
+  }
+
+  async function checkDailyWithdrawal(uid) {
+    try {
+      const today = new Date(); today.setHours(0, 0, 0, 0);
+      const withdrawalsQuery = query(collection(db, 'withdrawals'), where('uid', '==', uid), orderBy('createdAt', 'desc'));
+      const snapshot = await getDocs(withdrawalsQuery);
+      hasWithdrawnToday = false;
+      snapshot.forEach(doc => { const data = doc.data(); const createdAt = data.createdAt?.toDate(); if (createdAt && createdAt >= today) hasWithdrawnToday = true; });
+      updateRequirementsUI();
+      updateSubmitButton();
+    } catch (error) { console.error('Error checking daily withdrawal:', error); }
+  }
+
+  function updateRequirementsUI() {
+    const timeIcon = document.getElementById('reqTimeIcon');
+    const timeStatus = document.getElementById('reqTimeStatus');
+    if (canWithdraw) { timeIcon.className = 'requirement-icon met'; timeIcon.textContent = '✅'; timeStatus.className = 'requirement-status met'; timeStatus.textContent = 'OK'; }
+    else { timeIcon.className = 'requirement-icon unmet'; timeIcon.textContent = '❌'; timeStatus.className = 'requirement-status unmet'; timeStatus.textContent = 'Closed'; }
+    
+    const dailyIcon = document.getElementById('reqDailyIcon');
+    const dailyStatus = document.getElementById('reqDailyStatus');
+    if (!hasWithdrawnToday) { dailyIcon.className = 'requirement-icon met'; dailyIcon.textContent = '✅'; dailyStatus.className = 'requirement-status met'; dailyStatus.textContent = 'OK'; }
+    else { dailyIcon.className = 'requirement-icon unmet'; dailyIcon.textContent = '❌'; dailyStatus.className = 'requirement-status unmet'; dailyStatus.textContent = 'Used Today'; }
+    
+    const invIcon = document.getElementById('reqInvestmentIcon');
+    const invStatus = document.getElementById('reqInvestmentStatus');
+    if (hasEverInvested) { invIcon.className = 'requirement-icon met'; invIcon.textContent = '✅'; invStatus.className = 'requirement-status met'; invStatus.textContent = 'OK'; }
+    else { invIcon.className = 'requirement-icon unmet'; invIcon.textContent = '❌'; invStatus.className = 'requirement-status unmet'; invStatus.textContent = 'Required'; }
+    
+    const pinIcon = document.getElementById('reqPinIcon');
+    const pinStatus = document.getElementById('reqPinStatus');
+    if (userWithdrawalPin) { pinIcon.className = 'requirement-icon met'; pinIcon.textContent = '✅'; pinStatus.className = 'requirement-status met'; pinStatus.textContent = 'Set'; }
+    else { pinIcon.className = 'requirement-icon unmet'; pinIcon.textContent = '❌'; pinStatus.className = 'requirement-status unmet'; pinStatus.textContent = 'Not Set'; }
+    
+    allRequirementsMet = canWithdraw && !hasWithdrawnToday && hasEverInvested && !!userWithdrawalPin;
+  }
+
+  function updateSubmitButton() {
+    const btn = document.getElementById('submitBtn');
+    if (!allRequirementsMet) {
+      btn.disabled = true;
+      if (!hasEverInvested) btn.title = 'You need to have made at least one investment (active or completed) to withdraw';
+      else if (!canWithdraw) btn.title = 'Withdrawals are currently closed';
+      else if (hasWithdrawnToday) btn.title = 'You have already withdrawn today';
+      else if (!userWithdrawalPin) btn.title = 'Please set up your withdrawal PIN first';
+    } else {
+      btn.disabled = false;
+      btn.title = '';
+    }
+  }
+
+  window.setupPin = async function() {
+    if (!currentUser) return;
+    const pin = ['pin1','pin2','pin3','pin4'].map(id => document.getElementById(id).value).join('');
+    const confirmPin = ['confirmPin1','confirmPin2','confirmPin3','confirmPin4'].map(id => document.getElementById(id).value).join('');
+    if (pin.length !== 4 || confirmPin.length !== 4) { showToast('error', 'Invalid PIN', 'Please enter a 4-digit PIN.'); return; }
+    if (pin !== confirmPin) { showToast('error', 'PIN Mismatch', 'PINs do not match.'); return; }
+    try {
+      await updateDoc(doc(db, 'users', currentUser.uid), { withdrawalPin: pin });
+      userWithdrawalPin = pin;
+      document.getElementById('pinSetupCard').style.display = 'none';
+      document.getElementById('withdrawFormCardWrapper').style.display = 'block';
+      updateRequirementsUI();
+      updateSubmitButton();
+      showToast('success', 'PIN Set!', 'Your withdrawal PIN has been set successfully.');
+    } catch (error) { showToast('error', 'Error', 'Failed to set PIN.'); }
+  };
+
+  window.submitWithdrawal = async function() {
+    if (!currentUser || !userWithdrawalPin) return;
+    if (!hasEverInvested) { showToast('warning', 'Investment Required', 'You must have made at least one investment (active or completed) to withdraw.'); return; }
+    if (!canWithdraw) { showToast('error', 'Withdrawals Closed', 'Withdrawals are only available Mon-Sat, 8AM-5PM.'); return; }
+    if (hasWithdrawnToday) { showToast('error', 'Limit Reached', 'You can only withdraw once per day.'); return; }
+    
+    document.querySelectorAll('.error-message').forEach(el => el.classList.remove('show'));
+    
+    const amount = parseFloat(document.getElementById('amount').value);
+    const bankCode = document.getElementById('bankName').value;
+    const bankNameText = document.getElementById('bankName').selectedOptions[0]?.textContent || '';
+    const accountNumber = document.getElementById('accountNumber').value.trim();
+    const accountName = document.getElementById('accountName').value;
+    const enteredPin = ['wPin1','wPin2','wPin3','wPin4'].map(id => document.getElementById(id).value).join('');
+    
+    let hasError = false;
+    if (!amount || amount < 3000) { document.getElementById('amountError').textContent = 'Minimum withdrawal is ₦3,000.'; document.getElementById('amountError').classList.add('show'); hasError = true; }
+    if (!bankCode) { document.getElementById('bankError').textContent = 'Please select a bank.'; document.getElementById('bankError').classList.add('show'); hasError = true; }
+    if (!accountNumber || accountNumber.length !== 10 || !/^\d{10}$/.test(accountNumber)) { document.getElementById('accountError').textContent = 'Enter a valid 10-digit account number.'; document.getElementById('accountError').classList.add('show'); hasError = true; }
+    else if (!accountName || !resolvedAccountName) { document.getElementById('accountError').textContent = 'We could not verify this account.'; document.getElementById('accountError').classList.add('show'); hasError = true; }
+    if (enteredPin.length !== 4) { document.getElementById('pinError').textContent = 'Please enter your 4-digit PIN.'; document.getElementById('pinError').classList.add('show'); hasError = true; }
+    if (hasError) return;
+
+    const btn = document.getElementById('submitBtn');
+    const spinner = document.getElementById('spinner');
+    const btnText = document.getElementById('btnText');
+    btn.disabled = true; spinner.style.display = 'block'; btnText.textContent = 'Processing...';
+
+    try {
+      const idToken = await currentUser.getIdToken();
+      const res = await fetch('/api/withdraw-request', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + idToken }, body: JSON.stringify({ amount, bank_code: bankCode, bank_name: bankNameText, account_number: accountNumber, account_name: accountName, pin: enteredPin }) });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Withdrawal failed');
+      document.getElementById('amount').value = '';
+      document.getElementById('bankName').value = '';
+      document.getElementById('accountNumber').value = '';
+      document.getElementById('accountName').value = '';
+      document.getElementById('accountNameBox').className = 'account-name-box';
+      resolvedAccountName = null;
+      ['wPin1','wPin2','wPin3','wPin4'].forEach(id => document.getElementById(id).value = '');
+      document.getElementById('summaryBox').style.display = 'none';
+      showToast('success', 'Withdrawal Requested! 🎉', 'Your request has been submitted for review.');
+      setTimeout(() => { window.location.href = 'transactions.html'; }, 2500);
+    } catch (error) {
+      console.error('Withdrawal error:', error);
+      showToast('error', 'Withdrawal Failed', error.message || 'Please try again.');
+    } finally {
+      btn.disabled = false; spinner.style.display = 'none'; btnText.textContent = 'Submit Withdrawal Request';
+    }
+  };
+
+  async function loadUserData(uid) {
+    try {
+      const userSnap = await getDoc(doc(db, 'users', uid));
+      if (userSnap.exists()) {
+        const userData = userSnap.data();
+        const withdrawalBalance = userData.withdrawalWallet || 0;
+        document.getElementById('headerBalance').textContent = formatNaira(withdrawalBalance);
+        document.getElementById('availableBalance').textContent = formatNaira(withdrawalBalance);
+        userWithdrawalPin = userData.withdrawalPin || null;
+        if (!userWithdrawalPin) { document.getElementById('pinSetupCard').style.display = 'block'; document.getElementById('withdrawFormCardWrapper').style.display = 'none'; }
+        else { document.getElementById('pinSetupCard').style.display = 'none'; document.getElementById('withdrawFormCardWrapper').style.display = 'block'; }
+        await checkEverInvested(uid); // FIXED: checks if user has EVER invested
+        await checkDailyWithdrawal(uid);
+        checkWithdrawalWindow();
+      }
+    } catch (error) { console.error('Error loading user data:', error); }
+  }
+
+  loadBanks();
+  
+  onAuthStateChanged(auth, (user) => {
+    if (user) {
+      currentUser = user;
+      loadUserData(user.uid);
+      setInterval(checkWithdrawalWindow, 60000);
+    } else { window.location.href = 'login.html'; }
+  });
+</script>
+
+</body>
+</html>
